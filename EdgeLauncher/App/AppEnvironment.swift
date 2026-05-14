@@ -6,7 +6,12 @@ final class AppEnvironment: ObservableObject {
     let router: TabRouter
 
     init() {
-        self.registry = ModuleRegistry()
-        self.router = TabRouter()
+        let registry = ModuleRegistry()
+        registry.register(AnyEdgeModule(YouTubeModule()))
+        self.registry = registry
+
+        let router = TabRouter()
+        if router.activeID == nil { router.activate("youtube") }
+        self.router = router
     }
 }
