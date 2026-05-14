@@ -28,6 +28,7 @@ struct Sidebar: View {
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 10)
+                .frame(width: 260)
             }
 
             Spacer()
