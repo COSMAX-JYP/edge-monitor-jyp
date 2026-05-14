@@ -14,6 +14,24 @@ struct EdgeLauncherApp: App {
                 .onAppear { handleAppear() }
         }
         .windowResizability(.automatic)
+        .commands {
+            CommandGroup(replacing: .newItem) {}
+            CommandMenu("탭") {
+                ForEach(Array(env.registry.modules.enumerated()), id: \.element.id) { idx, module in
+                    if idx < 9 {
+                        Button(module.title) {
+                            env.router.activate(module.id)
+                        }
+                        .keyboardShortcut(KeyEquivalent(Character("\(idx + 1)")), modifiers: .command)
+                    }
+                }
+                Divider()
+                Button("새로고침") {
+                    NSApp.sendAction(Selector(("reload:")), to: nil, from: nil)
+                }
+                .keyboardShortcut("r", modifiers: .command)
+            }
+        }
 
         Settings {
             SettingsView()
