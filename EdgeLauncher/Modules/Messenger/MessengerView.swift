@@ -3,9 +3,22 @@ import WebKit
 import os
 
 struct MessengerView: View {
+    @ObservedObject private var badges = BadgeStore.shared
+
     var body: some View {
-        DiscordWebView()
-            .ignoresSafeArea()
+        ZStack(alignment: .topTrailing) {
+            DiscordWebView()
+                .ignoresSafeArea()
+            if let debugText = badges.debug["messenger"] {
+                Text(debugText)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
+                    .padding(12)
+            }
+        }
     }
 }
 
@@ -17,10 +30,12 @@ struct DiscordWebView: NSViewRepresentable {
         config.mediaTypesRequiringUserActionForPlayback = []
         config.allowsAirPlayForMediaPlayback = true
         config.preferences.isElementFullscreenEnabled = true
+        config.preferences.javaScriptCanOpenWindowsAutomatically = true
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.allowsBackForwardNavigationGestures = true
         webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+        webView.uiDelegate = context.coordinator
         webView.load(URLRequest(url: URL(string: "https://discord.com/app")!))
 
         context.coordinator.attach(webView: webView)
@@ -32,7 +47,7 @@ struct DiscordWebView: NSViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     @MainActor
-    final class Coordinator {
+    final class Coordinator: NSObject, WKUIDelegate {
         private var timer: Timer?
 
         func attach(webView: WKWebView) {
@@ -41,26 +56,34 @@ struct DiscordWebView: NSViewRepresentable {
                 guard let webView else { return }
                 Task { @MainActor in
                     let title = webView.title ?? ""
-                    var count = Self.parseUnread(title: title)
-                    // DOM 직접 조회: Discord 사이드바의 '미읽음' 뱃지 합계
+                    let titleCount = Self.parseUnread(title: title)
                     webView.evaluateJavaScript("""
                     (function() {
                       try {
-                        const nodes = document.querySelectorAll('[class*=numberBadge]');
+                        const sels = [
+                          '[class*=numberBadge]',
+                          '[class*="numberBadge"]',
+                          '[class*=baseShapeRound]'
+                        ];
                         let total = 0;
-                        nodes.forEach(n => {
-                          const v = parseInt((n.textContent || '').trim(), 10);
-                          if (!isNaN(v)) total += v;
-                        });
+                        for (const s of sels) {
+                          const nodes = document.querySelectorAll(s);
+                          nodes.forEach(n => {
+                            const v = parseInt((n.textContent || '').trim(), 10);
+                            if (!isNaN(v)) total += v;
+                          });
+                          if (total > 0) break;
+                        }
                         return total;
                       } catch (e) { return 0; }
                     })();
                     """) { result, _ in
                         let domCount = (result as? Int) ?? 0
-                        count = max(count, domCount)
-                        AppLog.web.debug("Discord title=\"\(title)\" parsed=\(count) dom=\(domCount)")
-                        BadgeStore.shared.set("messenger", count: count)
-                        NSApp.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
+                        let finalCount = max(titleCount, domCount)
+                        BadgeStore.shared.set("messenger", count: finalCount)
+                        BadgeStore.shared.setDebug("messenger", "title=\"\(title.prefix(40))\" t=\(titleCount) dom=\(domCount)")
+                        NSApp.dockTile.badgeLabel = finalCount > 0 ? "\(finalCount)" : nil
+                        AppLog.web.debug("Discord t=\(titleCount) dom=\(domCount) title=\(title)")
                     }
                 }
             }
@@ -68,7 +91,13 @@ struct DiscordWebView: NSViewRepresentable {
 
         deinit { timer?.invalidate() }
 
-        // "(5) Discord | ..." 또는 "(5) #channel | Server | Discord" 형식에서 N 추출
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+            if let url = navigationAction.request.url {
+                webView.load(URLRequest(url: url))
+            }
+            return nil
+        }
+
         static func parseUnread(title: String) -> Int {
             guard let openIdx = title.firstIndex(of: "("),
                   let closeIdx = title.firstIndex(of: ")"),
