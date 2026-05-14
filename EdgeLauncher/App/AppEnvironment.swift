@@ -16,6 +16,7 @@ final class AppEnvironment: ObservableObject {
         registry.register(AnyEdgeModule(WidgetDashboardModule()))
         registry.register(AnyEdgeModule(MessengerModule()))
         registry.register(AnyEdgeModule(LauncherModule()))
+        registry.register(AnyEdgeModule(OutlookCalendarModule()))
         self.registry = registry
 
         let router = TabRouter()
