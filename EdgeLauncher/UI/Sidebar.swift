@@ -1,5 +1,4 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct Sidebar: View {
     @EnvironmentObject var registry: ModuleRegistry
@@ -19,11 +18,7 @@ struct Sidebar: View {
                         ) {
                             router.activate(module.id)
                         }
-                        .onDrag { NSItemProvider(object: module.id as NSString) }
-                        .onDrop(
-                            of: [UTType.plainText],
-                            delegate: ModuleDropDelegate(targetID: module.id, registry: registry)
-                        )
+                        .contextMenu { reorderMenu(for: module.id) }
                     }
                 }
                 .padding(.vertical, 10)
@@ -34,22 +29,22 @@ struct Sidebar: View {
         .frame(width: 155)
         .background(.regularMaterial)
     }
-}
 
-private struct ModuleDropDelegate: DropDelegate {
-    let targetID: String
-    let registry: ModuleRegistry
-
-    func performDrop(info: DropInfo) -> Bool {
-        guard let provider = info.itemProviders(for: [UTType.plainText]).first else { return false }
-        provider.loadObject(ofClass: NSString.self) { source, _ in
-            guard let sourceID = source as? String else { return }
-            DispatchQueue.main.async {
-                guard let from = registry.modules.firstIndex(where: { $0.id == sourceID }),
-                      let to = registry.modules.firstIndex(where: { $0.id == targetID }) else { return }
-                registry.reorder(from: from, to: to)
-            }
+    @ViewBuilder
+    private func reorderMenu(for id: String) -> some View {
+        if let idx = registry.modules.firstIndex(where: { $0.id == id }) {
+            let lastIdx = registry.modules.count - 1
+            Button("위로 이동") { registry.reorder(from: idx, to: idx - 1) }
+                .disabled(idx == 0)
+            Button("아래로 이동") { registry.reorder(from: idx, to: idx + 1) }
+                .disabled(idx >= lastIdx)
+            Divider()
+            Button("맨 위로") { registry.reorder(from: idx, to: 0) }
+                .disabled(idx == 0)
+            Button("맨 아래로") { registry.reorder(from: idx, to: lastIdx) }
+                .disabled(idx >= lastIdx)
+            Divider()
+            Button("이 탭 숨기기") { registry.setVisible(id, visible: false) }
         }
-        return true
     }
 }
