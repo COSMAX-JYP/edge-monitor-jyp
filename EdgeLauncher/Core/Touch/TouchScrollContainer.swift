@@ -7,15 +7,23 @@ struct TouchScrollContainer<Content: View>: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
-        let hosting = NSHostingView(rootView: content)
-        hosting.translatesAutoresizingMaskIntoConstraints = true
-        scrollView.documentView = hosting
         scrollView.hasVerticalScroller = false
         scrollView.hasHorizontalScroller = false
         scrollView.drawsBackground = false
         scrollView.scrollerStyle = .overlay
         scrollView.autohidesScrollers = true
         scrollView.verticalScrollElasticity = .allowed
+
+        let hosting = NSHostingView(rootView: content)
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.documentView = hosting
+
+        NSLayoutConstraint.activate([
+            hosting.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            hosting.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: scrollView.contentView.trailingAnchor),
+            hosting.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+        ])
 
         let coordinator = context.coordinator
         coordinator.scrollView = scrollView

@@ -6,31 +6,20 @@ struct RootView: View {
     @EnvironmentObject var displayService: XeneonDisplayService
     @Environment(\.openSettings) private var openSettings
     @State private var activated: Set<String> = []
-    @StateObject private var chrome = ChromeVisibilityController()
 
     var body: some View {
         VStack(spacing: 0) {
             ErrorBanner(bus: ErrorBus.shared)
-            if chrome.chromeVisible {
-                headerBar
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                Divider()
-            }
+            headerBar
+            Divider()
             HStack(spacing: 0) {
-                if chrome.chromeVisible {
-                    Sidebar()
-                        .transition(.move(edge: .leading).combined(with: .opacity))
-                    Divider()
-                }
+                Sidebar()
+                Divider()
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .frame(minWidth: 1280, minHeight: 480)
-        .animation(.easeInOut(duration: 0.25), value: chrome.chromeVisible)
-        .onContinuousHover { phase in
-            if case .active = phase { chrome.notifyMouseMoved() }
-        }
     }
 
     private var headerBar: some View {
