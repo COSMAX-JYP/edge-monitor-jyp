@@ -1,33 +1,34 @@
 import SwiftUI
+import WebKit
 
 struct MessengerView: View {
     var body: some View {
-        HStack(spacing: 0) {
-            card(title: "Slack", icon: "number", color: .purple, count: "3")
-            Divider()
-            card(title: "Discord", icon: "gamecontroller", color: .indigo, count: "12")
-            Divider()
-            card(title: "iMessage", icon: "message.fill", color: .green, count: "1")
-            Divider()
-            card(title: "Mail", icon: "envelope.fill", color: .blue, count: "27")
-        }
-        .background(Color(NSColor.windowBackgroundColor))
+        DiscordWebView(url: URL(string: "https://discord.com/app")!)
+            .ignoresSafeArea()
+    }
+}
+
+struct DiscordWebView: NSViewRepresentable {
+    let url: URL
+
+    func makeNSView(context: Context) -> WKWebView {
+        let config = WKWebViewConfiguration()
+        config.websiteDataStore = .default()
+        config.processPool = SharedWebProcessPool.shared
+        config.mediaTypesRequiringUserActionForPlayback = []
+        config.allowsAirPlayForMediaPlayback = true
+        config.preferences.isElementFullscreenEnabled = true
+
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.allowsBackForwardNavigationGestures = true
+        webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+        webView.load(URLRequest(url: url))
+        return webView
     }
 
-    private func card(title: String, icon: String, color: Color, count: String) -> some View {
-        VStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 48))
-                .foregroundStyle(color)
-            Text(title)
-                .font(.system(size: 16, weight: .semibold))
-            Text("\(count) 미확인")
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-            Text("연동 예정")
-                .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
+    func updateNSView(_ nsView: WKWebView, context: Context) {
+        if nsView.url != url {
+            nsView.load(URLRequest(url: url))
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

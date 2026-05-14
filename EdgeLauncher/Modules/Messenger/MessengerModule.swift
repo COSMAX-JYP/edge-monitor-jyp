@@ -2,9 +2,9 @@ import SwiftUI
 
 struct MessengerModule: EdgeModule {
     let id = "messenger"
-    let title = "Inbox"
-    let iconName = "bubble.left.and.bubble.right"
-    let supportsFullscreen = false
+    let title = "Discord"
+    let iconName = "bubble.left.and.bubble.right.fill"
+    let supportsFullscreen = true
 
     var view: some View { MessengerView() }
 }
