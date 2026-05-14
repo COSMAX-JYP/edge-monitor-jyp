@@ -346,8 +346,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "윈도우를 Xeneon Edge 디스플레이로 이동하기 위해 사용합니다";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "macOS Calendar와 Outlook 일정을 위젯에 표시합니다.";
-				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "macOS 미리알림을 위젯에 표시하고 완료 처리를 위해 사용합니다.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "macOS 미리알림을 위젯에 표시하고 완료 처리를 위해 사용합니다.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "현재 위치 기반 날씨 정보를 표시하기 위해 사용합니다.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -392,8 +393,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "윈도우를 Xeneon Edge 디스플레이로 이동하기 위해 사용합니다";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "macOS Calendar와 Outlook 일정을 위젯에 표시합니다.";
-				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "macOS 미리알림을 위젯에 표시하고 완료 처리를 위해 사용합니다.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "macOS 미리알림을 위젯에 표시하고 완료 처리를 위해 사용합니다.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "현재 위치 기반 날씨 정보를 표시하기 위해 사용합니다.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

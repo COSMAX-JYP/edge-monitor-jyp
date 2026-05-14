@@ -3,6 +3,7 @@ import SwiftUI
 struct Sidebar: View {
     @EnvironmentObject var registry: ModuleRegistry
     @EnvironmentObject var router: TabRouter
+    @ObservedObject private var badges = BadgeStore.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,7 +19,8 @@ struct Sidebar: View {
                         TouchableTabButton(
                             iconName: module.iconName,
                             title: module.title,
-                            isActive: router.activeID == module.id
+                            isActive: router.activeID == module.id,
+                            badgeCount: badges.counts[module.id] ?? 0
                         ) {
                             router.activate(module.id)
                         }

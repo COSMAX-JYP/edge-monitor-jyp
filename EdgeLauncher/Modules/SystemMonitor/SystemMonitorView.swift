@@ -1,3 +1,5 @@
+import AppKit
+import Darwin
 import SwiftUI
 
 struct SystemMonitorView: View {
@@ -9,16 +11,30 @@ struct SystemMonitorView: View {
             topGauges
             Divider()
             HStack(spacing: 0) {
-                ProcessColumn(title: "CPU", icon: "cpu", accent: .blue, rows: procs.cpuTop)
+                ProcessColumn(title: "CPU", icon: "cpu", accent: .blue, rows: procs.cpuTop, onKill: kill)
                 Divider()
-                ProcessColumn(title: "Memory", icon: "memorychip", accent: .purple, rows: procs.memTop)
+                ProcessColumn(title: "Memory", icon: "memorychip", accent: .purple, rows: procs.memTop, onKill: kill)
                 Divider()
-                ProcessColumn(title: "Energy", icon: "bolt.fill", accent: .orange, rows: procs.energyTop, valueDescription: "누적 CPU 시간")
+                ProcessColumn(title: "Energy", icon: "bolt.fill", accent: .orange, rows: procs.energyTop, valueDescription: "누적 CPU 시간", onKill: kill)
                 Divider()
-                ProcessColumn(title: "Disk", icon: "internaldrive", accent: .teal, rows: procs.diskTop, valueDescription: "활성 스레드 수")
+                ProcessColumn(title: "Disk", icon: "internaldrive", accent: .teal, rows: procs.diskTop, valueDescription: "활성 스레드 수", onKill: kill)
             }
         }
         .background(Color(NSColor.windowBackgroundColor))
+    }
+
+    private func kill(_ pid: Int, force: Bool) {
+        let signal = force ? SIGKILL : SIGTERM
+        let result = Darwin.kill(pid_t(pid), signal)
+        if result != 0 {
+            let alert = NSAlert()
+            alert.messageText = "프로세스 종료 실패"
+            alert.informativeText = "PID \(pid) (errno \(errno)). 권한이 없을 수 있습니다 (root/SIP 보호)."
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "확인")
+            alert.runModal()
+        }
+        procs.refresh()
     }
 
     private var topGauges: some View {
@@ -108,6 +124,7 @@ private struct ProcessColumn: View {
     let accent: Color
     let rows: [ProcessRow]
     var valueDescription: String? = nil
+    let onKill: (Int, Bool) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -143,6 +160,16 @@ private struct ProcessColumn: View {
                     VStack(spacing: 0) {
                         ForEach(Array(rows.enumerated()), id: \.element.id) { idx, row in
                             ProcessRowView(rank: idx + 1, row: row, accent: accent)
+                                .contextMenu {
+                                    Button("프로세스 정보 복사") {
+                                        let text = "\(row.name) (PID \(row.id)) — \(row.value)"
+                                        NSPasteboard.general.clearContents()
+                                        NSPasteboard.general.setString(text, forType: .string)
+                                    }
+                                    Divider()
+                                    Button("종료 (SIGTERM)") { onKill(row.id, false) }
+                                    Button("강제 종료 (SIGKILL)", role: .destructive) { onKill(row.id, true) }
+                                }
                             if idx < rows.count - 1 {
                                 Divider()
                             }
