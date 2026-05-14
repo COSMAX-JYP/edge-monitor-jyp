@@ -15,7 +15,7 @@ struct Sidebar: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 6) {
-                    ForEach(registry.modules) { module in
+                    ForEach(registry.visibleModules) { module in
                         TouchableTabButton(
                             iconName: module.iconName,
                             title: module.title,
