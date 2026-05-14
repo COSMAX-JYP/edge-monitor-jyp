@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import os
 
 struct MessengerView: View {
     var body: some View {
@@ -36,12 +37,31 @@ struct DiscordWebView: NSViewRepresentable {
 
         func attach(webView: WKWebView) {
             timer?.invalidate()
-            timer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { [weak webView] _ in
+            timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak webView] _ in
                 guard let webView else { return }
                 Task { @MainActor in
                     let title = webView.title ?? ""
-                    let count = Self.parseUnread(title: title)
-                    BadgeStore.shared.set("messenger", count: count)
+                    var count = Self.parseUnread(title: title)
+                    // DOM 직접 조회: Discord 사이드바의 '미읽음' 뱃지 합계
+                    webView.evaluateJavaScript("""
+                    (function() {
+                      try {
+                        const nodes = document.querySelectorAll('[class*=numberBadge]');
+                        let total = 0;
+                        nodes.forEach(n => {
+                          const v = parseInt((n.textContent || '').trim(), 10);
+                          if (!isNaN(v)) total += v;
+                        });
+                        return total;
+                      } catch (e) { return 0; }
+                    })();
+                    """) { result, _ in
+                        let domCount = (result as? Int) ?? 0
+                        count = max(count, domCount)
+                        AppLog.web.debug("Discord title=\"\(title)\" parsed=\(count) dom=\(domCount)")
+                        BadgeStore.shared.set("messenger", count: count)
+                        NSApp.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
+                    }
                 }
             }
         }
