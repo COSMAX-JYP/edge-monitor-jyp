@@ -14,7 +14,7 @@ struct Sidebar: View {
 
             Divider()
 
-            ScrollView(showsIndicators: false) {
+            TouchScrollContainer {
                 VStack(spacing: 6) {
                     ForEach(registry.visibleModules) { module in
                         TouchableTabButton(
