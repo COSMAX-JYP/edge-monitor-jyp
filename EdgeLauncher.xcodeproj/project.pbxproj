@@ -345,6 +345,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "윈도우를 Xeneon Edge 디스플레이로 이동하기 위해 사용합니다";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "macOS Calendar와 Outlook 일정을 위젯에 표시합니다.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -389,6 +390,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "윈도우를 Xeneon Edge 디스플레이로 이동하기 위해 사용합니다";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "macOS Calendar와 Outlook 일정을 위젯에 표시합니다.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
