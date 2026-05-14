@@ -7,4 +7,12 @@ protocol EdgeModule {
     var iconName: String { get }
     var supportsFullscreen: Bool { get }
     @ViewBuilder var view: Body { get }
+
+    func didBecomeActive()
+    func didResignActive()
+}
+
+extension EdgeModule {
+    func didBecomeActive() {}
+    func didResignActive() {}
 }

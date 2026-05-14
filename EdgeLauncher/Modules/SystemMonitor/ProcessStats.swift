@@ -19,7 +19,7 @@ final class ProcessStats: ObservableObject {
 
     init() {
         refresh()
-        start()
+        // Timer는 외부 start() 호출 시 시작.
     }
 
     deinit { timer?.invalidate() }

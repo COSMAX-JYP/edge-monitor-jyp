@@ -19,6 +19,7 @@ final class AppEnvironment: ObservableObject {
         self.registry = registry
 
         let router = TabRouter()
+        router.attach(registry: registry)
         if router.activeID == nil { router.activate("youtube") }
         self.router = router
 

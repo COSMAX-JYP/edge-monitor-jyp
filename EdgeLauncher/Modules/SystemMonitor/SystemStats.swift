@@ -13,8 +13,7 @@ final class SystemStats: ObservableObject {
     private var timer: Timer?
 
     init() {
-        _ = sampleCPU() // 초기 baseline
-        start()
+        _ = sampleCPU() // 초기 baseline. Timer는 외부 start() 호출 시 시작.
     }
 
     deinit {

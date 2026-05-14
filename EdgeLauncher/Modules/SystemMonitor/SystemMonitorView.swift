@@ -3,8 +3,8 @@ import Darwin
 import SwiftUI
 
 struct SystemMonitorView: View {
-    @StateObject private var stats = SystemStats()
-    @StateObject private var procs = ProcessStats()
+    @ObservedObject var stats: SystemStats
+    @ObservedObject var procs: ProcessStats
 
     var body: some View {
         VStack(spacing: 0) {

@@ -7,6 +7,8 @@ struct AnyEdgeModule: Identifiable {
     let iconName: String
     let supportsFullscreen: Bool
     let viewBuilder: () -> AnyView
+    private let becameActive: () -> Void
+    private let resigned: () -> Void
 
     init<M: EdgeModule>(_ module: M) {
         self.id = module.id
@@ -14,7 +16,12 @@ struct AnyEdgeModule: Identifiable {
         self.iconName = module.iconName
         self.supportsFullscreen = module.supportsFullscreen
         self.viewBuilder = { AnyView(module.view) }
+        self.becameActive = { module.didBecomeActive() }
+        self.resigned = { module.didResignActive() }
     }
+
+    func didBecomeActive() { becameActive() }
+    func didResignActive() { resigned() }
 }
 
 final class ModuleRegistry: ObservableObject {

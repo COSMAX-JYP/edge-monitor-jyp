@@ -2,9 +2,9 @@ import Combine
 import SwiftUI
 
 struct WidgetDashboardView: View {
+    @ObservedObject var eventVM: EventStoreVM
+    @ObservedObject var weather: WeatherService
     @State private var now = Date()
-    @StateObject private var eventVM = EventStoreVM()
-    @StateObject private var weather = WeatherService()
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -21,9 +21,5 @@ struct WidgetDashboardView: View {
         }
         .background(Color(NSColor.windowBackgroundColor))
         .onReceive(timer) { now = $0 }
-        .task {
-            await eventVM.requestAccess()
-            weather.start()
-        }
     }
 }
