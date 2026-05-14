@@ -3,8 +3,6 @@ import SwiftUI
 struct Sidebar: View {
     @EnvironmentObject var registry: ModuleRegistry
     @EnvironmentObject var router: TabRouter
-    @EnvironmentObject var displayService: XeneonDisplayService
-    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,34 +28,8 @@ struct Sidebar: View {
             }
 
             Spacer()
-
-            Divider()
-
-            VStack(spacing: 10) {
-                Button(action: requestEdgeMove) {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                        .font(.system(size: 30))
-                        .frame(width: 78, height: 78)
-                        .opacity(displayService.edgeScreen == nil ? 0.3 : 1.0)
-                }
-                .buttonStyle(.plain)
-                .disabled(displayService.edgeScreen == nil)
-                .help("Xeneon Edge로 이동")
-
-                Button(action: { openSettings() }) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 30))
-                        .frame(width: 78, height: 78)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.bottom, 16)
         }
         .frame(width: 155)
         .background(.regularMaterial)
-    }
-
-    private func requestEdgeMove() {
-        NotificationCenter.default.post(name: .edgeMoveRequested, object: nil)
     }
 }

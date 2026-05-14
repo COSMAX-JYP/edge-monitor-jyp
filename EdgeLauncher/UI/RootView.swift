@@ -3,6 +3,8 @@ import SwiftUI
 struct RootView: View {
     @EnvironmentObject var registry: ModuleRegistry
     @EnvironmentObject var router: TabRouter
+    @EnvironmentObject var displayService: XeneonDisplayService
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         VStack(spacing: 0) {
@@ -19,7 +21,7 @@ struct RootView: View {
     }
 
     private var headerBar: some View {
-        HStack {
+        HStack(spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "rectangle.split.3x1.fill")
                     .font(.system(size: 11))
@@ -30,14 +32,36 @@ struct RootView: View {
                     .font(.system(size: 11, weight: .regular, design: .monospaced))
                     .foregroundStyle(.secondary)
             }
+
             Spacer()
+
             Text("Designed by jyp")
                 .font(.system(size: 11, weight: .light))
                 .foregroundStyle(.tertiary)
+
+            HStack(spacing: 4) {
+                Button(action: requestEdgeMove) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(width: 28, height: 22)
+                        .opacity(displayService.edgeScreen == nil ? 0.3 : 1.0)
+                }
+                .buttonStyle(.plain)
+                .disabled(displayService.edgeScreen == nil)
+                .help("Xeneon Edge로 이동")
+
+                Button(action: { openSettings() }) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(width: 28, height: 22)
+                }
+                .buttonStyle(.plain)
+                .help("설정")
+            }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 6)
-        .frame(height: 28)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+        .frame(height: 32)
         .background(.regularMaterial)
     }
 
@@ -67,6 +91,10 @@ struct RootView: View {
             Text("좌측에서 탭을 선택하세요")
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func requestEdgeMove() {
+        NotificationCenter.default.post(name: .edgeMoveRequested, object: nil)
     }
 
     static var appVersion: String {
