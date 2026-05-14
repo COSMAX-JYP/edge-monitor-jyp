@@ -18,7 +18,6 @@ final class AppEnvironment: ObservableObject {
         registry.register(AnyEdgeModule(LauncherModule()))
         registry.register(AnyEdgeModule(OutlookCalendarModule()))
         registry.register(AnyEdgeModule(NotionModule()))
-        registry.register(AnyEdgeModule(PomodoroModule()))
         self.registry = registry
 
         let router = TabRouter()
