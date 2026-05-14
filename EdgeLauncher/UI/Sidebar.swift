@@ -5,10 +5,15 @@ struct Sidebar: View {
     @EnvironmentObject var router: TabRouter
     @ObservedObject private var badges = BadgeStore.shared
 
+    private let columns = [
+        GridItem(.flexible(), spacing: 6),
+        GridItem(.flexible(), spacing: 6),
+    ]
+
     var body: some View {
         VStack(spacing: 0) {
             TouchScrollContainer {
-                VStack(spacing: 6) {
+                LazyVGrid(columns: columns, spacing: 8) {
                     ForEach(registry.visibleModules) { module in
                         TouchableTabButton(
                             iconName: module.iconName,
@@ -21,12 +26,13 @@ struct Sidebar: View {
                         .contextMenu { reorderMenu(for: module.id) }
                     }
                 }
+                .padding(.horizontal, 10)
                 .padding(.vertical, 10)
             }
 
             Spacer()
         }
-        .frame(width: 155)
+        .frame(width: 260)
         .background(.regularMaterial)
     }
 
