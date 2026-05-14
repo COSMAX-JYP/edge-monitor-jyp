@@ -8,12 +8,6 @@ struct Sidebar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Image(systemName: "rectangle.split.3x1")
-                .font(.system(size: 34))
-                .padding(.vertical, 20)
-
-            Divider()
-
             TouchScrollContainer {
                 VStack(spacing: 6) {
                     ForEach(registry.visibleModules) { module in
