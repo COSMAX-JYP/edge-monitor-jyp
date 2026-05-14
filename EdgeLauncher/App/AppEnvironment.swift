@@ -12,6 +12,11 @@ final class AppEnvironment: ObservableObject {
         let registry = ModuleRegistry()
         registry.register(AnyEdgeModule(YouTubeModule()))
         registry.register(AnyEdgeModule(YouTubeMusicModule()))
+        registry.register(AnyEdgeModule(SystemMonitorModule()))
+        registry.register(AnyEdgeModule(WidgetDashboardModule()))
+        registry.register(AnyEdgeModule(MessengerModule()))
+        registry.register(AnyEdgeModule(LauncherModule()))
+        registry.register(AnyEdgeModule(AmbientModule()))
         self.registry = registry
 
         let router = TabRouter()

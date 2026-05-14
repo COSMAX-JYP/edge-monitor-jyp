@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @AppStorage("app.autoMoveOnLaunch") private var autoMoveOnLaunch = false
-    @AppStorage("app.startInFullScreen") private var startInFullScreen = false
+    @AppStorage("app.autoMoveOnLaunch") private var autoMoveOnLaunch = true
+    @AppStorage("app.startInFullScreen") private var startInFullScreen = true
 
     var body: some View {
         TabView {

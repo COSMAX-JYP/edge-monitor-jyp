@@ -13,7 +13,7 @@ struct EdgeLauncherApp: App {
                 .frame(minWidth: 1280, idealWidth: 2560, minHeight: 480, idealHeight: 720)
                 .onAppear { handleAppear() }
         }
-        .windowResizability(.contentSize)
+        .windowResizability(.automatic)
 
         Settings {
             SettingsView()
@@ -22,6 +22,8 @@ struct EdgeLauncherApp: App {
     }
 
     private func handleAppear() {
+        configureMainWindow()
+
         NotificationCenter.default.addObserver(
             forName: .edgeMoveRequested,
             object: nil,
@@ -32,15 +34,32 @@ struct EdgeLauncherApp: App {
             }
         }
 
+        if UserDefaults.standard.object(forKey: "app.autoMoveOnLaunch") == nil {
+            UserDefaults.standard.set(true, forKey: "app.autoMoveOnLaunch")
+        }
+        if UserDefaults.standard.object(forKey: "app.startInFullScreen") == nil {
+            UserDefaults.standard.set(true, forKey: "app.startInFullScreen")
+        }
+
         if UserDefaults.standard.bool(forKey: "app.autoMoveOnLaunch") {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                 Task { @MainActor in
                     env.windowController.moveMainWindowToEdge()
                     if UserDefaults.standard.bool(forKey: "app.startInFullScreen") {
-                        env.windowController.toggleFullScreen()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                            env.windowController.toggleFullScreen()
+                        }
                     }
                 }
             }
+        }
+    }
+
+    private func configureMainWindow() {
+        DispatchQueue.main.async {
+            guard let window = NSApp.mainWindow ?? NSApp.windows.first else { return }
+            window.collectionBehavior.insert(.fullScreenPrimary)
+            window.styleMask.insert(.resizable)
         }
     }
 }
