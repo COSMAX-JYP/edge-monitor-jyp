@@ -6,8 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		C0447D982FB6338700E328F3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C0447D7A2FB6311B00E328F3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C0447D812FB6311B00E328F3;
+			remoteInfo = EdgeLauncher;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		C0447D822FB6311B00E328F3 /* EdgeLauncher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EdgeLauncher.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0447D942FB6338700E328F3 /* EdgeLauncherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EdgeLauncherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +27,22 @@
 			path = EdgeLauncher;
 			sourceTree = "<group>";
 		};
+		C0447D952FB6338700E328F3 /* EdgeLauncherTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = EdgeLauncherTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		C0447D7F2FB6311B00E328F3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0447D912FB6338700E328F3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				C0447D842FB6311B00E328F3 /* EdgeLauncher */,
+				C0447D952FB6338700E328F3 /* EdgeLauncherTests */,
 				C0447D832FB6311B00E328F3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				C0447D822FB6311B00E328F3 /* EdgeLauncher.app */,
+				C0447D942FB6338700E328F3 /* EdgeLauncherTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +95,29 @@
 			productReference = C0447D822FB6311B00E328F3 /* EdgeLauncher.app */;
 			productType = "com.apple.product-type.application";
 		};
+		C0447D932FB6338700E328F3 /* EdgeLauncherTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0447D9A2FB6338700E328F3 /* Build configuration list for PBXNativeTarget "EdgeLauncherTests" */;
+			buildPhases = (
+				C0447D902FB6338700E328F3 /* Sources */,
+				C0447D912FB6338700E328F3 /* Frameworks */,
+				C0447D922FB6338700E328F3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C0447D992FB6338700E328F3 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C0447D952FB6338700E328F3 /* EdgeLauncherTests */,
+			);
+			name = EdgeLauncherTests;
+			packageProductDependencies = (
+			);
+			productName = EdgeLauncherTests;
+			productReference = C0447D942FB6338700E328F3 /* EdgeLauncherTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +130,10 @@
 				TargetAttributes = {
 					C0447D812FB6311B00E328F3 = {
 						CreatedOnToolsVersion = 26.5;
+					};
+					C0447D932FB6338700E328F3 = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = C0447D812FB6311B00E328F3;
 					};
 				};
 			};
@@ -100,12 +152,20 @@
 			projectRoot = "";
 			targets = (
 				C0447D812FB6311B00E328F3 /* EdgeLauncher */,
+				C0447D932FB6338700E328F3 /* EdgeLauncherTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		C0447D802FB6311B00E328F3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0447D922FB6338700E328F3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +182,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0447D902FB6338700E328F3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C0447D992FB6338700E328F3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C0447D812FB6311B00E328F3 /* EdgeLauncher */;
+			targetProxy = C0447D982FB6338700E328F3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		C0447D8B2FB6311C00E328F3 /* Debug */ = {
@@ -259,11 +334,13 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "윈도우를 Xeneon Edge 디스플레이로 이동하기 위해 사용합니다";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jongyoungpark.edgelauncher.EdgeLauncher;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -291,11 +368,13 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "윈도우를 Xeneon Edge 디스플레이로 이동하기 위해 사용합니다";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jongyoungpark.edgelauncher.EdgeLauncher;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -306,6 +385,46 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		C0447D9B2FB6338700E328F3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6VTC4DM869;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jongyoungpark.edgelauncher.EdgeLauncherTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/EdgeLauncher.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/EdgeLauncher";
+			};
+			name = Debug;
+		};
+		C0447D9C2FB6338700E328F3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6VTC4DM869;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jongyoungpark.edgelauncher.EdgeLauncherTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/EdgeLauncher.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/EdgeLauncher";
 			};
 			name = Release;
 		};
@@ -326,6 +445,15 @@
 			buildConfigurations = (
 				C0447D8E2FB6311C00E328F3 /* Debug */,
 				C0447D8F2FB6311C00E328F3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0447D9A2FB6338700E328F3 /* Build configuration list for PBXNativeTarget "EdgeLauncherTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0447D9B2FB6338700E328F3 /* Debug */,
+				C0447D9C2FB6338700E328F3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
