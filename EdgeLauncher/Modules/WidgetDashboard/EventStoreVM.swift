@@ -1,6 +1,7 @@
 import Combine
 import EventKit
 import Foundation
+import os
 
 @MainActor
 final class EventStoreVM: ObservableObject {
@@ -22,6 +23,8 @@ final class EventStoreVM: ObservableObject {
         } catch {
             hasEventAccess = false
             errorMessage = error.localizedDescription
+            AppLog.event.error("calendar access: \(error.localizedDescription)")
+            ErrorBus.shared.publish("캘린더", error.localizedDescription)
         }
         do {
             if #available(macOS 14, *) {

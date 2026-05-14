@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import os
 
 struct LauncherEntry: Identifiable, Codable, Equatable {
     let id: UUID
@@ -57,6 +58,8 @@ final class LauncherStore: ObservableObject {
         let url = URL(fileURLWithPath: entry.bundleURL)
         guard FileManager.default.fileExists(atPath: entry.bundleURL) else {
             NSSound.beep()
+            AppLog.launcher.error("missing app: \(entry.bundleURL)")
+            ErrorBus.shared.publish("런처", "앱을 찾을 수 없습니다: \(entry.bundleURL)")
             return
         }
         let cfg = NSWorkspace.OpenConfiguration()

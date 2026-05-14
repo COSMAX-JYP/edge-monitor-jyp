@@ -1,6 +1,7 @@
 import Combine
 import CoreLocation
 import Foundation
+import os
 
 struct WeatherSnapshot {
     var temperature: Double = .nan
@@ -95,7 +96,10 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
             lastUpdated = Date()
             errorMessage = nil
         } catch {
-            errorMessage = "날씨 조회 실패: \(error.localizedDescription)"
+            let msg = "날씨 조회 실패: \(error.localizedDescription)"
+            errorMessage = msg
+            AppLog.weather.error("\(msg)")
+            ErrorBus.shared.publish("날씨", msg)
         }
     }
 

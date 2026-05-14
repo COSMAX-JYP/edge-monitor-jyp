@@ -10,6 +10,7 @@ struct RootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            ErrorBanner(bus: ErrorBus.shared)
             if chrome.chromeVisible {
                 headerBar
                     .transition(.move(edge: .top).combined(with: .opacity))
