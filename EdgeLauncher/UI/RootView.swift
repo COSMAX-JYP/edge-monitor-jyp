@@ -5,6 +5,7 @@ struct RootView: View {
     @EnvironmentObject var router: TabRouter
     @EnvironmentObject var displayService: XeneonDisplayService
     @Environment(\.openSettings) private var openSettings
+    @State private var activated: Set<String> = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -74,11 +75,19 @@ struct RootView: View {
         } else {
             ZStack {
                 ForEach(registry.modules) { module in
-                    module.viewBuilder()
-                        .opacity(router.activeID == module.id ? 1 : 0)
-                        .allowsHitTesting(router.activeID == module.id)
-                        .accessibilityHidden(router.activeID != module.id)
+                    if activated.contains(module.id) {
+                        module.viewBuilder()
+                            .opacity(router.activeID == module.id ? 1 : 0)
+                            .allowsHitTesting(router.activeID == module.id)
+                            .accessibilityHidden(router.activeID != module.id)
+                    }
                 }
+            }
+            .onAppear {
+                if let id = router.activeID { activated.insert(id) }
+            }
+            .onChange(of: router.activeID) { _, newID in
+                if let id = newID { activated.insert(id) }
             }
         }
     }
