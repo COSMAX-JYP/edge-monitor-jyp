@@ -19,9 +19,9 @@ final class YouTubeModuleTests: XCTestCase {
     }
 
     @MainActor
-    func test_environment_registers_both_modules() {
+    func test_environment_registers_phase1_and_phase2_modules() {
         let env = AppEnvironment()
-        let ids = env.registry.modules.map(\.id)
-        XCTAssertEqual(ids, ["youtube", "youtube-music"])
+        let ids = Set(env.registry.modules.map(\.id))
+        XCTAssertEqual(ids, ["youtube", "youtube-music", "system-monitor", "widgets", "messenger", "launcher"])
     }
 }
