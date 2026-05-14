@@ -17,9 +17,7 @@ final class AppEnvironment: ObservableObject {
         registry.register(AnyEdgeModule(MessengerModule()))
         registry.register(AnyEdgeModule(LauncherModule()))
         registry.register(AnyEdgeModule(OutlookCalendarModule()))
-        registry.register(AnyEdgeModule(SlackModule()))
-        registry.register(AnyEdgeModule(ChatGPTModule()))
-        registry.register(AnyEdgeModule(ClaudeModule()))
+        registry.register(AnyEdgeModule(NotionModule()))
         registry.register(AnyEdgeModule(PomodoroModule()))
         self.registry = registry
 
