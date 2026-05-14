@@ -16,7 +16,14 @@ struct TouchScrollContainer<Content: View>: NSViewRepresentable {
         scrollView.scrollerStyle = .overlay
         scrollView.autohidesScrollers = true
         scrollView.verticalScrollElasticity = .allowed
-        context.coordinator.coordinator = TouchPanGestureInstaller.install(on: scrollView)
+
+        let coordinator = context.coordinator
+        coordinator.scrollView = scrollView
+        let pan = NSPanGestureRecognizer(target: coordinator, action: #selector(TouchScrollCoordinator.handlePan(_:)))
+        pan.numberOfTouchesRequired = 1
+        pan.buttonMask = 1
+        scrollView.addGestureRecognizer(pan)
+
         return scrollView
     }
 
@@ -26,9 +33,7 @@ struct TouchScrollContainer<Content: View>: NSViewRepresentable {
         }
     }
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
-
-    final class Coordinator {
-        var coordinator: TouchScrollCoordinator?
+    func makeCoordinator() -> TouchScrollCoordinator {
+        TouchScrollCoordinator()
     }
 }

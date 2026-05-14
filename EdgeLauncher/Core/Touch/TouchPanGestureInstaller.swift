@@ -1,17 +1,5 @@
 import AppKit
 
-enum TouchPanGestureInstaller {
-    static func install(on scrollView: NSScrollView) -> TouchScrollCoordinator {
-        let coordinator = TouchScrollCoordinator()
-        coordinator.scrollView = scrollView
-        let pan = NSPanGestureRecognizer(target: coordinator, action: #selector(TouchScrollCoordinator.handlePan(_:)))
-        pan.numberOfTouchesRequired = 1
-        pan.buttonMask = 1
-        scrollView.addGestureRecognizer(pan)
-        return coordinator
-    }
-}
-
 final class TouchScrollCoordinator: NSObject {
     weak var scrollView: NSScrollView?
     private var startOffsetY: CGFloat = 0
