@@ -7,8 +7,10 @@ struct YouTubeWebView: NSViewRepresentable {
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
+        config.processPool = SharedWebProcessPool.shared
         config.mediaTypesRequiringUserActionForPlayback = []
         config.allowsAirPlayForMediaPlayback = true
+        config.preferences.isElementFullscreenEnabled = true
 
         let doubleTapScript = """
         (function() {
