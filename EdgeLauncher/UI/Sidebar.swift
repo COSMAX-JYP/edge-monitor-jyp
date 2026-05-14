@@ -9,13 +9,13 @@ struct Sidebar: View {
     var body: some View {
         VStack(spacing: 0) {
             Image(systemName: "rectangle.split.3x1")
-                .font(.system(size: 24))
-                .padding(.vertical, 16)
+                .font(.system(size: 34))
+                .padding(.vertical, 20)
 
             Divider()
 
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 4) {
+                VStack(spacing: 6) {
                     ForEach(registry.modules) { module in
                         TouchableTabButton(
                             iconName: module.iconName,
@@ -26,18 +26,18 @@ struct Sidebar: View {
                         }
                     }
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, 10)
             }
 
             Spacer()
 
             Divider()
 
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 Button(action: requestEdgeMove) {
                     Image(systemName: "rectangle.portrait.and.arrow.right")
-                        .font(.system(size: 22))
-                        .frame(width: 56, height: 56)
+                        .font(.system(size: 30))
+                        .frame(width: 78, height: 78)
                         .opacity(displayService.edgeScreen == nil ? 0.3 : 1.0)
                 }
                 .buttonStyle(.plain)
@@ -46,14 +46,14 @@ struct Sidebar: View {
 
                 Button(action: { openSettings() }) {
                     Image(systemName: "gearshape")
-                        .font(.system(size: 22))
-                        .frame(width: 56, height: 56)
+                        .font(.system(size: 30))
+                        .frame(width: 78, height: 78)
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.bottom, 12)
+            .padding(.bottom, 16)
         }
-        .frame(width: 110)
+        .frame(width: 155)
         .background(.regularMaterial)
     }
 

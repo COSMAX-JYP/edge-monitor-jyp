@@ -8,19 +8,19 @@ struct TouchableTabButton: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 Image(systemName: iconName)
-                    .font(.system(size: 28, weight: .medium))
-                    .frame(width: 56, height: 56)
+                    .font(.system(size: 40, weight: .medium))
+                    .frame(width: 78, height: 78)
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: 18)
                             .fill(isActive ? Color.accentColor.opacity(0.25) : Color.clear)
                     )
                 Text(title)
-                    .font(.system(size: 11))
+                    .font(.system(size: 15))
                     .lineLimit(1)
             }
-            .frame(width: 84, height: 84)
+            .frame(width: 120, height: 120)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -34,5 +34,5 @@ struct TouchableTabButton: View {
         TouchableTabButton(iconName: "music.note", title: "Music", isActive: false) {}
     }
     .padding()
-    .frame(width: 110)
+    .frame(width: 155)
 }
