@@ -8,6 +8,7 @@ final class AppEnvironment: ObservableObject {
     init() {
         let registry = ModuleRegistry()
         registry.register(AnyEdgeModule(YouTubeModule()))
+        registry.register(AnyEdgeModule(YouTubeMusicModule()))
         self.registry = registry
 
         let router = TabRouter()
