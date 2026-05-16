@@ -16,13 +16,17 @@ final class ProcessStats: ObservableObject {
     @Published var diskTop: [ProcessRow] = []
 
     private var timer: Timer?
+    private var refreshTask: Task<Void, Never>?
 
     init() {
+        // 초기 데이터는 비동기로. main thread blocking 회피 (macOS 26+ abort 방지).
         refresh()
-        // Timer는 외부 start() 호출 시 시작.
     }
 
-    deinit { timer?.invalidate() }
+    deinit {
+        timer?.invalidate()
+        refreshTask?.cancel()
+    }
 
     func start() {
         timer?.invalidate()
@@ -34,18 +38,32 @@ final class ProcessStats: ObservableObject {
     func stop() {
         timer?.invalidate()
         timer = nil
+        refreshTask?.cancel()
+        refreshTask = nil
     }
 
     func refresh() {
-        cpuTop = parseCPU()
-        memTop = parseMemory()
-        energyTop = parseEnergy()
-        diskTop = parseDisk()
+        guard refreshTask == nil else { return }
+        refreshTask = Task.detached(priority: .userInitiated) {
+            let cpu = Self.parseCPU()
+            let mem = Self.parseMemory()
+            let energy = Self.parseEnergy()
+            let disk = Self.parseDisk()
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.refreshTask = nil
+                guard !Task.isCancelled else { return }
+                self.cpuTop = cpu
+                self.memTop = mem
+                self.energyTop = energy
+                self.diskTop = disk
+            }
+        }
     }
 
-    // MARK: - parsers
+    // MARK: - parsers (nonisolated: no instance state; run on background thread)
 
-    private func parseCPU() -> [ProcessRow] {
+    nonisolated private static func parseCPU() -> [ProcessRow] {
         let raw = run("ps -axo pid=,pcpu=,comm= -r | head -10")
         let rows = lines(raw).compactMap { line -> ProcessRow? in
             let parts = tokens(line, max: 3)
@@ -62,7 +80,7 @@ final class ProcessStats: ObservableObject {
         return rows
     }
 
-    private func parseMemory() -> [ProcessRow] {
+    nonisolated private static func parseMemory() -> [ProcessRow] {
         let raw = run("ps -axo pid=,rss=,comm= -m | head -10")
         let rows = lines(raw).compactMap { line -> ProcessRow? in
             let parts = tokens(line, max: 3)
@@ -80,7 +98,7 @@ final class ProcessStats: ObservableObject {
         return rows
     }
 
-    private func parseEnergy() -> [ProcessRow] {
+    nonisolated private static func parseEnergy() -> [ProcessRow] {
         // ps의 누적 CPU time (cputime)를 에너지 임팩트 근사값으로 사용.
         let raw = run("ps -axo pid=,time=,comm= | sort -k2 -r | head -10")
         let rows = lines(raw).compactMap { line -> ProcessRow? in
@@ -96,7 +114,7 @@ final class ProcessStats: ObservableObject {
         return rows
     }
 
-    private func parseDisk() -> [ProcessRow] {
+    nonisolated private static func parseDisk() -> [ProcessRow] {
         // macOS ps 가 디스크 I/O 컬럼을 노출하지 않는다.
         // 대안: 가장 많은 스레드를 가진 프로세스 (대용량 작업의 간접 지표) 또는 placeholder.
         let raw = run("ps -axo pid=,nlwp=,comm= | sort -k2 -nr | head -10")
@@ -117,11 +135,11 @@ final class ProcessStats: ObservableObject {
 
     // MARK: - helpers
 
-    private func lines(_ s: String) -> [String] {
+    nonisolated private static func lines(_ s: String) -> [String] {
         s.split(separator: "\n").map(String.init).filter { !$0.isEmpty }
     }
 
-    private func tokens(_ line: String, max: Int) -> [String] {
+    nonisolated private static func tokens(_ line: String, max: Int) -> [String] {
         var result: [String] = []
         var remaining = line.trimmingCharacters(in: .whitespaces)
         for i in 0..<max {
@@ -140,7 +158,7 @@ final class ProcessStats: ObservableObject {
         return result
     }
 
-    private func prettyName(_ raw: String) -> String {
+    nonisolated private static func prettyName(_ raw: String) -> String {
         // 풀 경로면 마지막 컴포넌트만 사용
         let trimmed = raw.trimmingCharacters(in: .whitespaces)
         if trimmed.contains("/") {
@@ -149,9 +167,9 @@ final class ProcessStats: ObservableObject {
         return trimmed
     }
 
-    private func run(_ cmd: String) -> String {
+    nonisolated private static func run(_ cmd: String) -> String {
         let p = Process()
-        p.launchPath = "/bin/sh"
+        p.executableURL = URL(fileURLWithPath: "/bin/sh")
         p.arguments = ["-c", cmd]
         let pipe = Pipe()
         p.standardOutput = pipe

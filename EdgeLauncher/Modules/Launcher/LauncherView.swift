@@ -1,12 +1,14 @@
 import AppKit
+import Combine
 import SwiftUI
 import UniformTypeIdentifiers
 
 struct LauncherView: View {
     @StateObject private var store = LauncherStore()
     @State private var editMode = false
+    @StateObject private var iconCache = LauncherIconCache()
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 24), count: 8)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 24), count: 7)
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,29 +32,29 @@ struct LauncherView: View {
     private var toolbar: some View {
         HStack {
             Label("Launcher", systemImage: "square.grid.3x3.fill")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.appBodyBold)
             Spacer()
             Text("\(store.entries.count)개")
-                .font(.system(size: 12, design: .monospaced))
+                .font(.appFootnoteMono)
                 .foregroundStyle(.secondary)
             Button(action: { editMode.toggle() }) {
                 Label(editMode ? "완료" : "편집", systemImage: editMode ? "checkmark" : "pencil")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appFootnoteBold)
             }
             .buttonStyle(.bordered)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
         .background(.regularMaterial)
     }
 
     private func appCell(_ entry: LauncherEntry) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             ZStack(alignment: .topTrailing) {
                 Button(action: { handleClick(entry) }) {
-                    Image(nsImage: NSWorkspace.shared.icon(forFile: entry.bundleURL))
+                    Image(nsImage: iconCache.icon(for: entry.bundleURL))
                         .resizable()
-                        .frame(width: 80, height: 80)
+                        .frame(width: 108, height: 108)
                 }
                 .buttonStyle(.plain)
                 .disabled(editMode)
@@ -69,18 +71,18 @@ struct LauncherView: View {
                 }
             }
             Text(entry.name)
-                .font(.system(size: 12))
+                .font(.appFootnote)
                 .lineLimit(1)
                 .foregroundStyle(.primary)
         }
     }
 
     private var addCell: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             Button(action: addApp) {
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 18)
                     .stroke(Color.secondary.opacity(0.5), style: StrokeStyle(lineWidth: 2, dash: [6]))
-                    .frame(width: 80, height: 80)
+                    .frame(width: 108, height: 108)
                     .overlay(
                         Image(systemName: "plus")
                             .font(.system(size: 32, weight: .light))
@@ -89,7 +91,7 @@ struct LauncherView: View {
             }
             .buttonStyle(.plain)
             Text("앱 추가")
-                .font(.system(size: 12))
+                .font(.appFootnote)
                 .foregroundStyle(.secondary)
         }
     }
@@ -110,5 +112,17 @@ struct LauncherView: View {
                 store.add(url: url)
             }
         }
+    }
+}
+
+@MainActor
+private final class LauncherIconCache: ObservableObject {
+    private var icons: [String: NSImage] = [:]
+
+    func icon(for path: String) -> NSImage {
+        if let cached = icons[path] { return cached }
+        let icon = NSWorkspace.shared.icon(forFile: path)
+        icons[path] = icon
+        return icon
     }
 }

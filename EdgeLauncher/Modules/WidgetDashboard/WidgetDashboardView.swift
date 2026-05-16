@@ -12,7 +12,7 @@ struct WidgetDashboardView: View {
             ClockHero(now: now)
             Divider()
             HStack(spacing: 0) {
-                WeatherPanel(weather: weather).frame(width: 320)
+                WeatherPanel(weather: weather).frame(width: 380)
                 Divider()
                 OutlookPanel(eventVM: eventVM)
                 Divider()

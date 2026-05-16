@@ -16,10 +16,10 @@ struct WeatherPanel: View {
             }
             Spacer()
             if let err = weather.errorMessage {
-                Text(err).font(.system(size: 10)).foregroundStyle(.red)
+                Text(err).font(.appCaption).foregroundStyle(.red)
             }
             Text("Open-Meteo + Apple CoreLocation")
-                .font(.system(size: 10)).foregroundStyle(.tertiary)
+                .font(.appCaption).foregroundStyle(.tertiary)
         }
         .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -28,12 +28,12 @@ struct WeatherPanel: View {
     private var header: some View {
         HStack {
             Label("날씨", systemImage: "cloud.sun.fill")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.appBodyBold)
                 .symbolRenderingMode(.multicolor)
             Spacer()
             if let updated = weather.lastUpdated {
                 Text(relativeUpdate(updated))
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.appCaptionMono)
                     .foregroundStyle(.tertiary)
             }
         }
@@ -42,13 +42,13 @@ struct WeatherPanel: View {
     private var weatherBody: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(weather.snapshot.locationName.isEmpty ? "현재 위치" : weather.snapshot.locationName)
-                .font(.system(size: 12)).foregroundStyle(.secondary)
+                .font(.appCallout).foregroundStyle(.secondary)
             HStack(spacing: 14) {
                 Image(systemName: weather.snapshot.icon).font(.system(size: 56)).symbolRenderingMode(.multicolor)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(String(format: "%.0f°", weather.snapshot.temperature))
                         .font(.system(size: 48, weight: .ultraLight)).monospacedDigit()
-                    Text(weather.snapshot.description).font(.system(size: 14)).foregroundStyle(.secondary)
+                    Text(weather.snapshot.description).font(.appCallout).foregroundStyle(.secondary)
                 }
                 Spacer()
             }
@@ -64,23 +64,23 @@ struct WeatherPanel: View {
     private var weatherPermission: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label("위치 권한이 필요합니다", systemImage: "location.slash")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.appFootnoteBold)
             Text("시스템 설정 > 개인정보 보호 및 보안 > 위치 서비스에서 EdgeLauncher 허용.")
-                .font(.system(size: 11)).foregroundStyle(.secondary)
-            Button("다시 시도") { weather.start() }.controlSize(.small)
+                .font(.appFootnote).foregroundStyle(.secondary)
+            Button("다시 시도") { weather.start() }.font(.appFootnote)
         }
-        .padding(10)
+        .padding(12)
         .background(Color.yellow.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
     }
 
     private func weatherStat(icon: String, label: String, value: String) -> some View {
         HStack(spacing: 10) {
-            Image(systemName: icon).font(.system(size: 13)).foregroundStyle(.secondary).frame(width: 18)
-            Text(label).font(.system(size: 12)).foregroundStyle(.secondary)
+            Image(systemName: icon).font(.appFootnote).foregroundStyle(.secondary).frame(width: 22)
+            Text(label).font(.appFootnote).foregroundStyle(.secondary)
             Spacer()
-            Text(value).font(.system(size: 13, weight: .medium, design: .monospaced)).monospacedDigit()
+            Text(value).font(.appFootnoteMono).monospacedDigit()
         }
-        .padding(.vertical, 6).padding(.horizontal, 10)
+        .padding(.vertical, 7).padding(.horizontal, 12)
         .background(.background.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
     }
 

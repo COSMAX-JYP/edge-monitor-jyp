@@ -22,6 +22,15 @@ final class EdgeWindowController {
         guard let window = NSApp.mainWindow ?? NSApp.windows.first else { return }
         window.toggleFullScreen(nil)
     }
+
+    /// 항상 풀스크린 상태로 들어가도록 보장 (이미 풀스크린이면 무시).
+    func enterFullScreenIfNeeded() {
+        guard let window = NSApp.mainWindow ?? NSApp.windows.first else { return }
+        window.collectionBehavior.insert(.fullScreenPrimary)
+        if !window.styleMask.contains(.fullScreen) {
+            window.toggleFullScreen(nil)
+        }
+    }
 }
 
 extension Notification.Name {

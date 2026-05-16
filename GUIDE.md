@@ -72,14 +72,22 @@ graph LR
 
 ## 단축키
 
-| 키 | 동작 |
-|---|---|
-| Cmd+, | 설정 윈도우 |
-| Ctrl+Cmd+F | 풀스크린 토글 |
-| Cmd+W | 윈도우 닫기 |
-| Cmd+Q | 앱 종료 |
+| 키 | 동작 | 라우팅 |
+|---|---|---|
+| Cmd+1..9 | 탭 전환 (활성 모듈이 처리하지 않을 시 default) | `CommandRouter` global default |
+| Cmd+N | 활성 모듈에 "새 항목" 명령 | `ModuleCommand.newItem` |
+| Cmd+E | 활성 모듈에 "편집" 명령 | `ModuleCommand.editItem` |
+| Cmd+Delete | 활성 모듈에 "삭제" 명령 | `ModuleCommand.delete` |
+| Cmd+F | 활성 모듈에 "검색" 명령 | `ModuleCommand.search` |
+| Cmd+R | 활성 모듈 + 시스템 새로고침 | `ModuleCommand.refresh` |
+| Cmd+, | 설정 윈도우 | macOS 기본 |
+| Ctrl+Cmd+F | 풀스크린 토글 | macOS 기본 |
+| Cmd+W | 윈도우 닫기 | macOS 기본 |
+| Cmd+Q | 앱 종료 | macOS 기본 |
 
 영상/음악 컨트롤은 키보드 미디어 키(F7/F8/F9 또는 Touch Bar) 사용.
+
+`CommandRouter` 는 활성 모듈에 먼저 dispatch 하고, 처리되지 않으면 global default 로 fallback 한다. 모듈은 `EdgeModule.commandHandler` 를 반환해 명령을 받는다.
 
 ---
 
@@ -88,11 +96,27 @@ graph LR
 새 탭을 추가하려면:
 
 1. `EdgeLauncher/Modules/<Name>/` 디렉토리 생성
-2. `<Name>View.swift` (SwiftUI View) 작성
+2. `<Name>View.swift` (SwiftUI View) 작성 — ViewModel/Service 는 모듈이 소유, View 에 주입
 3. `<Name>Module.swift` 에서 `EdgeModule` 프로토콜 구현
-4. `App/AppEnvironment.swift` 의 `init()` 에 `registry.register(AnyEdgeModule(<Name>Module()))` 한 줄 추가
+   - 필요 시 `commandHandler: ModuleCommandHandler?` 반환
+   - 필요 시 `requiredPermissions: [PermissionKind]` 반환
+4. `EdgeLauncher/App/AppEnvironment.swift` 의 `init()` 에 `registry.register(AnyEdgeModule(<Name>Module()))` 한 줄 추가
 
 `PBXFileSystemSynchronizedRootGroup` 덕에 디스크에 파일만 두면 Xcode 가 자동 인식한다.
+
+### 공통 인프라
+
+| 컴포넌트 | 위치 | 용도 |
+|---|---|---|
+| `CommandRouter` | `Core/Command/` | 활성 모듈 기반 키보드 단축키 라우팅 |
+| `PermissionService` | `Core/Permission/` | Calendar/Accessibility/Automation 권한 상태 통합 |
+| `AtomicJSONStore<T>` | `Core/Persistence/` | crash-safe JSON 영속화 (temp+rename, 백업 회전, 스키마 버전, debounce) |
+| `PermissionPromptView` | `Core/Permission/` | 권한 거부/미요청 상태의 onboarding UI |
+
+### Info.plist 키 추가
+
+`GENERATE_INFOPLIST_FILE = YES` 빌드 설정 사용 중. 권한 설명·URL scheme 은 `INFOPLIST_KEY_*` build setting 으로 주입.
+자세한 사용법은 [`EdgeLauncher/Core/Build/InfoPlistRecipes.md`](EdgeLauncher/Core/Build/InfoPlistRecipes.md) 참조.
 
 ---
 

@@ -41,6 +41,5 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 
-# OMC state
-.omc/state/
-.omc/logs/
+# OMC state (전부 로컬 — 커밋 안 함)
+.omc/

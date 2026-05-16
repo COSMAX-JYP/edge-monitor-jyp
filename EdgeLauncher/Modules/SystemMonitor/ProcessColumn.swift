@@ -13,14 +13,14 @@ struct ProcessColumn: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.appBody)
                     .foregroundStyle(accent)
                 Text(title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.appBodyBold)
                 Spacer()
                 if let desc = valueDescription {
                     Text(desc)
-                        .font(.system(size: 9))
+                        .font(.appCaption)
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -34,7 +34,7 @@ struct ProcessColumn: View {
                 VStack {
                     ProgressView().controlSize(.small)
                     Text("샘플링 중...")
-                        .font(.system(size: 11))
+                        .font(.appFootnote)
                         .foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -73,23 +73,23 @@ struct ProcessRowView: View {
     var body: some View {
         HStack(spacing: 10) {
             Text("\(rank)")
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .font(.appCaptionMono)
                 .foregroundStyle(.tertiary)
-                .frame(width: 16, alignment: .trailing)
+                .frame(width: 22, alignment: .trailing)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(row.name)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appFootnoteBold)
                     .lineLimit(1)
                 Text("PID \(row.id)")
-                    .font(.system(size: 9, design: .monospaced))
+                    .font(.appCaptionMono)
                     .foregroundStyle(.tertiary)
             }
 
             Spacer()
 
             Text(row.value)
-                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                .font(.appFootnoteMono)
                 .foregroundStyle(accent)
         }
         .padding(.horizontal, 14)

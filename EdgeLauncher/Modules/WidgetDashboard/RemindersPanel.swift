@@ -25,13 +25,13 @@ struct RemindersPanel: View {
 
     private var header: some View {
         HStack {
-            Label("미리알림", systemImage: "checklist").font(.system(size: 18, weight: .semibold))
+            Label("미리알림", systemImage: "checklist").font(.system(size: 14, weight: .semibold))
             Spacer()
             if eventVM.hasReminderAccess {
-                Text("\(eventVM.reminders.count)건").font(.system(size: 13, weight: .medium, design: .monospaced)).foregroundStyle(.secondary)
+                Text("\(eventVM.reminders.count)건").font(.system(size: 10, weight: .medium, design: .monospaced)).foregroundStyle(.secondary)
             }
             Button(action: { eventVM.reloadReminders() }) {
-                Image(systemName: "arrow.clockwise").font(.system(size: 12))
+                Image(systemName: "arrow.clockwise").font(.system(size: 10))
             }
             .buttonStyle(.plain)
         }
@@ -41,23 +41,23 @@ struct RemindersPanel: View {
         HStack(alignment: .top, spacing: 10) {
             Button(action: { eventVM.toggleComplete(reminder) }) {
                 Image(systemName: reminder.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 18))
+                    .font(.system(size: 14))
                     .foregroundStyle(reminder.isCompleted ? Color.green : Color.secondary)
             }
             .buttonStyle(.plain)
             VStack(alignment: .leading, spacing: 3) {
                 Text(reminder.title ?? "(제목 없음)")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                     .strikethrough(reminder.isCompleted)
                     .foregroundStyle(reminder.isCompleted ? .secondary : .primary)
                     .lineLimit(1)
                 if let due = reminder.dueDateComponents?.date {
                     Text(dueLabel(due))
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(.system(size: 9, design: .monospaced))
                         .foregroundStyle(isOverdue(due, completed: reminder.isCompleted) ? .red : .secondary)
                 }
                 if let cal = reminder.calendar {
-                    Text(cal.title).font(.system(size: 10)).foregroundStyle(.tertiary)
+                    Text(cal.title).font(.system(size: 8)).foregroundStyle(.tertiary)
                 }
             }
             Spacer()
@@ -68,9 +68,9 @@ struct RemindersPanel: View {
 
     private var permissionBanner: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("미리알림 권한이 필요합니다", systemImage: "lock.fill").font(.system(size: 14, weight: .semibold))
+            Label("미리알림 권한이 필요합니다", systemImage: "lock.fill").font(.system(size: 11, weight: .semibold))
             Text("시스템 설정 > 개인정보 보호 및 보안에서 EdgeLauncher 허용.")
-                .font(.system(size: 12)).foregroundStyle(.secondary)
+                .font(.system(size: 10)).foregroundStyle(.secondary)
             Button("권한 다시 요청") { Task { await eventVM.requestAccess() } }.controlSize(.small)
         }
         .padding(12)
@@ -79,8 +79,8 @@ struct RemindersPanel: View {
 
     private var emptyState: some View {
         VStack(spacing: 8) {
-            Image(systemName: "checkmark.seal.fill").font(.system(size: 32)).foregroundStyle(.green)
-            Text("미리알림 없음").font(.system(size: 14)).foregroundStyle(.secondary)
+            Image(systemName: "checkmark.seal.fill").font(.system(size: 26)).foregroundStyle(.green)
+            Text("미리알림 없음").font(.system(size: 11)).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity).padding(.top, 24)
     }

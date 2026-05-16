@@ -27,8 +27,8 @@ struct OutlookCalendarView: View {
             Spacer()
 
             Button(action: prevMonth) {
-                Image(systemName: "chevron.left").font(.system(size: 15, weight: .semibold))
-                    .frame(width: 36, height: 28)
+                Image(systemName: "chevron.left").font(.appBodyBold)
+                    .frame(width: 44, height: 32)
                     .foregroundStyle(.white)
                     .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
             }
@@ -38,39 +38,40 @@ struct OutlookCalendarView: View {
                 currentMonth = Calendar.current.startOfMonth(for: Date())
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, 12).padding(.vertical, 6)
+            .font(.appBody)
+            .padding(.horizontal, 14).padding(.vertical, 7)
             .foregroundStyle(.white)
             .background(.white.opacity(0.1), in: Capsule())
 
             Button(action: nextMonth) {
-                Image(systemName: "chevron.right").font(.system(size: 15, weight: .semibold))
-                    .frame(width: 36, height: 28)
+                Image(systemName: "chevron.right").font(.appBodyBold)
+                    .frame(width: 44, height: 32)
                     .foregroundStyle(.white)
                     .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
             }
             .buttonStyle(.plain)
 
             Button(action: { store.reload(for: currentMonth) }) {
-                Image(systemName: "arrow.clockwise").font(.system(size: 13))
-                    .frame(width: 36, height: 28)
+                Image(systemName: "arrow.clockwise").font(.appFootnote)
+                    .frame(width: 44, height: 32)
                     .foregroundStyle(.white.opacity(0.7))
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 24)
-        .padding(.vertical, 14)
+        .padding(.vertical, 16)
     }
 
     private var weekdayHeader: some View {
         HStack(spacing: 0) {
             ForEach(0..<7, id: \.self) { idx in
                 Text(weekdayNames[idx])
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appFootnoteBold)
                     .foregroundStyle(idx == 0 ? Color.red.opacity(0.85)
                                        : (idx == 6 ? Color.blue.opacity(0.85)
                                                    : Color.white.opacity(0.5)))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 10)
             }
         }
     }
@@ -130,12 +131,12 @@ private struct DayCell: View {
     let events: [EKEvent]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text("\(Calendar.current.component(.day, from: date))")
                     .font(.system(size: 18, weight: isToday ? .bold : .regular, design: .rounded))
                     .foregroundStyle(textColor)
-                    .frame(width: 28, height: 28)
+                    .frame(width: 34, height: 34)
                     .background(
                         Circle()
                             .fill(isToday ? Color.white : Color.clear)
@@ -143,22 +144,22 @@ private struct DayCell: View {
                     .foregroundStyle(isToday ? Color.black : textColor)
 
                 Text(secondaryDateText)
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.appCaptionMono)
                     .foregroundStyle(.white.opacity(0.35))
                 Spacer()
             }
-            .padding(.horizontal, 6)
+            .padding(.horizontal, 8)
             .padding(.top, 6)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 ForEach(Array(events.prefix(4).enumerated()), id: \.element.eventIdentifier) { _, event in
                     eventChip(event)
                 }
                 if events.count > 4 {
                     Text("+\(events.count - 4)")
-                        .font(.system(size: 9, design: .monospaced))
+                        .font(.appCaptionMono)
                         .foregroundStyle(.white.opacity(0.5))
-                        .padding(.leading, 6)
+                        .padding(.leading, 8)
                 }
             }
 
@@ -176,15 +177,15 @@ private struct DayCell: View {
     private func eventChip(_ event: EKEvent) -> some View {
         let color = Color(cgColor: event.calendar?.cgColor ?? CGColor(red: 0.4, green: 0.6, blue: 1, alpha: 1))
         return Text(event.title ?? "")
-            .font(.system(size: 10, weight: .medium))
+            .font(.appCaption)
             .lineLimit(1)
             .foregroundStyle(.white)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(color.opacity(0.85))
-            .cornerRadius(3)
-            .padding(.horizontal, 4)
+            .cornerRadius(4)
+            .padding(.horizontal, 5)
     }
 
     private var secondaryDateText: String {

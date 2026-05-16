@@ -10,9 +10,9 @@ struct ErrorBanner: View {
                     .foregroundStyle(.yellow)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(err.category)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.appFootnoteBold)
                     Text(err.message)
-                        .font(.system(size: 11))
+                        .font(.appFootnote)
                         .lineLimit(2)
                 }
                 Spacer()

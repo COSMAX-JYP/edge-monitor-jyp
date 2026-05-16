@@ -15,7 +15,20 @@ struct EdgeLauncherApp: App {
         }
         .windowResizability(.automatic)
         .commands {
-            CommandGroup(replacing: .newItem) {}
+            CommandGroup(replacing: .newItem) {
+                Button("New") { env.commandRouter.dispatch(.newItem) }
+                    .keyboardShortcut("n", modifiers: .command)
+            }
+            CommandGroup(after: .pasteboard) {
+                Button("Edit") { env.commandRouter.dispatch(.editItem) }
+                    .keyboardShortcut("e", modifiers: .command)
+                Button("Delete") { env.commandRouter.dispatch(.delete) }
+                    .keyboardShortcut(.delete, modifiers: .command)
+            }
+            CommandGroup(after: .undoRedo) {
+                Button("Find") { env.commandRouter.dispatch(.search) }
+                    .keyboardShortcut("f", modifiers: .command)
+            }
             CommandMenu("탭") {
                 ForEach(Array(env.registry.modules.enumerated()), id: \.element.id) { idx, module in
                     if idx < 9 {
@@ -27,6 +40,7 @@ struct EdgeLauncherApp: App {
                 }
                 Divider()
                 Button("새로고침") {
+                    env.commandRouter.dispatch(.refresh)
                     NSApp.sendAction(Selector(("reload:")), to: nil, from: nil)
                 }
                 .keyboardShortcut("r", modifiers: .command)
@@ -41,16 +55,7 @@ struct EdgeLauncherApp: App {
 
     private func handleAppear() {
         configureMainWindow()
-
-        NotificationCenter.default.addObserver(
-            forName: .edgeMoveRequested,
-            object: nil,
-            queue: .main
-        ) { _ in
-            Task { @MainActor in
-                env.windowController.moveMainWindowToEdge()
-            }
-        }
+        let didBootstrap = env.bootstrapWindowIfNeeded()
 
         if UserDefaults.standard.object(forKey: "app.autoMoveOnLaunch") == nil {
             UserDefaults.standard.set(true, forKey: "app.autoMoveOnLaunch")
@@ -58,14 +63,17 @@ struct EdgeLauncherApp: App {
         if UserDefaults.standard.object(forKey: "app.startInFullScreen") == nil {
             UserDefaults.standard.set(true, forKey: "app.startInFullScreen")
         }
+        if UserDefaults.standard.object(forKey: "app.keepCursorOnEdgeForTouch") == nil {
+            UserDefaults.standard.set(true, forKey: "app.keepCursorOnEdgeForTouch")
+        }
 
-        if UserDefaults.standard.bool(forKey: "app.autoMoveOnLaunch") {
+        if didBootstrap, UserDefaults.standard.bool(forKey: "app.autoMoveOnLaunch") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                 Task { @MainActor in
                     env.windowController.moveMainWindowToEdge()
                     if UserDefaults.standard.bool(forKey: "app.startInFullScreen") {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                            env.windowController.toggleFullScreen()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                            env.windowController.enterFullScreenIfNeeded()
                         }
                     }
                 }

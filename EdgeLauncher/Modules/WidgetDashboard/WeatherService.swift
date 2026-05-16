@@ -52,11 +52,18 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     private let manager = CLLocationManager()
     private var timer: Timer?
     private var currentLocation: CLLocation?
+    private var lastGeocodedLocation: CLLocation?
 
     override init() {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+    }
+
+    deinit {
+        manager.stopUpdatingLocation()
+        manager.delegate = nil
+        timer?.invalidate()
     }
 
     func start() {
@@ -104,12 +111,18 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     }
 
     private func reverseGeocode(_ location: CLLocation) async {
+        if let lastGeocodedLocation,
+           location.distance(from: lastGeocodedLocation) < 500,
+           !snapshot.locationName.isEmpty {
+            return
+        }
         let geocoder = CLGeocoder()
         do {
             let placemarks = try await geocoder.reverseGeocodeLocation(location, preferredLocale: Locale(identifier: "ko_KR"))
             if let p = placemarks.first {
                 let parts = [p.administrativeArea, p.locality, p.subLocality].compactMap { $0 }
                 snapshot.locationName = parts.joined(separator: " ")
+                lastGeocodedLocation = location
             }
         } catch {
             // 무시

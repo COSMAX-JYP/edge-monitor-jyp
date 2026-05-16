@@ -31,7 +31,7 @@ struct ClockHero: View {
 
             HStack(spacing: 40) {
                 Text(timeText)
-                    .font(.system(size: 132, weight: .ultraLight, design: .rounded))
+                    .font(.system(size: 106, weight: .ultraLight, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(
                         LinearGradient(colors: [.white, .white.opacity(0.75)], startPoint: .top, endPoint: .bottom)
@@ -43,7 +43,7 @@ struct ClockHero: View {
                         .font(.system(size: 32, weight: .light, design: .rounded))
                         .foregroundStyle(.white)
                     Text(dayText)
-                        .font(.system(size: 24, weight: .ultraLight, design: .rounded))
+                        .font(.system(size: 22, weight: .ultraLight, design: .rounded))
                         .foregroundStyle(.white.opacity(0.7))
 
                     HStack(spacing: 12) {
@@ -62,11 +62,11 @@ struct ClockHero: View {
 
     private func statPill(label: String, value: String) -> some View {
         HStack(spacing: 6) {
-            Text(label).font(.system(size: 10, weight: .semibold)).foregroundStyle(.white.opacity(0.55))
-            Text(value).font(.system(size: 12, weight: .medium, design: .monospaced)).foregroundStyle(.white.opacity(0.85))
+            Text(label).font(.appFootnoteBold).foregroundStyle(.white.opacity(0.55))
+            Text(value).font(.appFootnoteMono).foregroundStyle(.white.opacity(0.85))
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
         .background(.white.opacity(0.12), in: Capsule())
     }
 

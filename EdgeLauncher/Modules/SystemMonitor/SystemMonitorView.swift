@@ -50,10 +50,10 @@ struct SystemMonitorView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .lastTextBaseline, spacing: 10) {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .font(.appBodyMonoBold)
                     .foregroundStyle(.secondary)
                 Text(String(format: "%.1f%%", value))
-                    .font(.system(size: 32, weight: .light, design: .monospaced))
+                    .font(.system(size: 42, weight: .light, design: .monospaced))
                     .contentTransition(.numericText(value: value))
                 Spacer()
             }

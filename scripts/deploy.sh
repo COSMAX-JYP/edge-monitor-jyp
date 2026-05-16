@@ -40,6 +40,15 @@ echo "[4/5] $INSTALL_PATH 에 복사..."
 cp -R "$PRODUCT_PATH" "$INSTALL_PATH"
 xattr -dr com.apple.quarantine "$INSTALL_PATH" 2>/dev/null || true
 
+# Apple Development 인증서로 안정적 서명 → 매번 리빌드해도 TCC(Input Monitoring/Accessibility) 유지.
+DEV_IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Apple Development/{print $2; exit}')
+if [ -n "$DEV_IDENTITY" ]; then
+  echo "  → Apple Development 인증서로 서명: $DEV_IDENTITY"
+  codesign --force --deep --sign "$DEV_IDENTITY" --options=runtime "$INSTALL_PATH" 2>&1 | tail -3 || true
+else
+  echo "  → Apple Development 인증서 없음, ad-hoc 서명 유지"
+fi
+
 echo "[5/5] 실행..."
 open "$INSTALL_PATH"
 

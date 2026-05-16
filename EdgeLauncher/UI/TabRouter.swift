@@ -25,9 +25,21 @@ final class TabRouter: ObservableObject {
         activeID = id
         if let previousID, let prev = registry?.module(id: previousID) {
             prev.didResignActive()
+            if let handler = prev.commandHandler {
+                Task { @MainActor in
+                    CommandRouter.shared.unregister(moduleId: prev.id)
+                    _ = handler
+                }
+            }
         }
         if let next = registry?.module(id: id) {
             next.didBecomeActive()
+            Task { @MainActor in
+                if let handler = next.commandHandler {
+                    CommandRouter.shared.register(handler, for: next.id)
+                }
+                CommandRouter.shared.setActive(next.id)
+            }
         }
     }
 }
