@@ -24,7 +24,7 @@ struct TouchableTabButton: View {
             VStack(spacing: 2) {
                 ZStack(alignment: .topTrailing) {
                     iconView
-                        .frame(width: 82, height: 62)
+                        .frame(width: 94, height: 76)
 
                     if badgeCount > 0 {
                         Text(badgeCount > 99 ? "99+" : "\(badgeCount)")
@@ -71,10 +71,11 @@ struct TouchableTabButton: View {
                 .aspectRatio(contentMode: .fit)
                 .scaleEffect(custom.scale)
                 .offset(x: custom.offsetX, y: custom.offsetY)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .frame(width: 94, height: 76)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
         } else {
             Image(systemName: iconName)
-                .font(.system(size: 48, weight: .semibold))
+                .font(.system(size: 58, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
         }
     }

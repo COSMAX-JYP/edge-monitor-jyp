@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import AppKit
+import UniformTypeIdentifiers
 
 @Observable
 @MainActor
@@ -183,6 +184,52 @@ final class KanbanViewModel {
 
     // MARK: - Drag and drop
 
+    func dragProvider(ref: KanbanCardRef) -> NSItemProvider {
+        let provider = NSItemProvider()
+        guard let data = try? JSONEncoder().encode(ref) else { return provider }
+        let textPayload = KanbanDragPayload.textPrefix + data.base64EncodedString()
+
+        provider.registerDataRepresentation(
+            forTypeIdentifier: UTType.kanbanCardRef.identifier,
+            visibility: .ownProcess
+        ) { completion in
+            completion(data, nil)
+            return nil
+        }
+        provider.registerObject(textPayload as NSString, visibility: .ownProcess)
+        return provider
+    }
+
+    func handleDrop(providers: [NSItemProvider], toColumn: UUID, toIndex: Int) -> Bool {
+        if let provider = providers.first(where: {
+            $0.hasItemConformingToTypeIdentifier(UTType.kanbanCardRef.identifier)
+        }) {
+            provider.loadDataRepresentation(forTypeIdentifier: UTType.kanbanCardRef.identifier) { [weak self] data, _ in
+                guard let self,
+                      let data,
+                      let ref = try? JSONDecoder().decode(KanbanCardRef.self, from: data) else { return }
+                Task { @MainActor in
+                    _ = self.handleDrop(ref: ref, toColumn: toColumn, toIndex: toIndex)
+                }
+            }
+            return true
+        }
+
+        if let provider = providers.first(where: { $0.canLoadObject(ofClass: NSString.self) }) {
+            provider.loadObject(ofClass: NSString.self) { [weak self] item, _ in
+                guard let self,
+                      let string = item as? String,
+                      let ref = KanbanDragPayload.decodeText(string) else { return }
+                Task { @MainActor in
+                    _ = self.handleDrop(ref: ref, toColumn: toColumn, toIndex: toIndex)
+                }
+            }
+            return true
+        }
+
+        return false
+    }
+
     func handleDrop(ref: KanbanCardRef, toColumn: UUID, toIndex: Int) -> Bool {
         guard let board = activeBoard, ref.boardId == board.id else { return false }
         store.moveCard(cardId: ref.cardId, fromColumn: ref.sourceColumnId, toColumn: toColumn, toIndex: toIndex)
@@ -298,5 +345,16 @@ final class KanbanViewModel {
             if Task.isCancelled { return }
             self?.lastUndoToast = nil
         }
+    }
+}
+
+private enum KanbanDragPayload {
+    static let textPrefix = "edgelauncher-kanban-card:"
+
+    static func decodeText(_ string: String) -> KanbanCardRef? {
+        guard string.hasPrefix(textPrefix) else { return nil }
+        let encoded = String(string.dropFirst(textPrefix.count))
+        guard let data = Data(base64Encoded: encoded) else { return nil }
+        return try? JSONDecoder().decode(KanbanCardRef.self, from: data)
     }
 }

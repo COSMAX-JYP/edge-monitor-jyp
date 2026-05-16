@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ColumnView: View {
     let board: KanbanBoard
@@ -6,14 +7,26 @@ struct ColumnView: View {
     let width: CGFloat
     let height: CGFloat
     @Bindable var viewModel: KanbanViewModel
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var renameValue: String = ""
     @State private var isRenaming: Bool = false
+    @State private var isEditingColor: Bool = false
+    @State private var isDropTargeted: Bool = false
     @FocusState private var renameFocused: Bool
 
     var body: some View {
+        let style = KanbanBoardStyle(isLight: colorScheme == .light)
+        let accent = style.accent(from: column.colorHex)
+        let hasCustomColor = column.colorHex != nil
+
         VStack(spacing: 0) {
-            header
+            if style.isLight {
+                Rectangle()
+                    .fill(accent)
+                    .frame(height: hasCustomColor ? 7 : 4)
+            }
+            header(style: style, accent: accent)
             ScrollView(showsIndicators: false) {
                 ZStack(alignment: .top) {
                     Color.clear
@@ -24,48 +37,56 @@ struct ColumnView: View {
                         }
                     LazyVStack(spacing: 12) {
                         ForEach(Array(column.cards.enumerated()), id: \.element.id) { index, card in
-                            CardView(
+                            DraggableCardRow(
+                                boardId: board.id,
+                                columnId: column.id,
+                                index: index,
                                 card: card,
                                 labels: board.labels,
-                                onTap: { viewModel.editCard(card) },
-                                onDelete: { viewModel.requestDelete(card) }
+                                viewModel: viewModel
                             )
-                            .draggable(KanbanCardRef(
-                                cardId: card.id,
-                                boardId: board.id,
-                                sourceColumnId: column.id
-                            ))
-                            .dropDestination(for: KanbanCardRef.self) { items, _ in
-                                guard let ref = items.first else { return false }
-                                return viewModel.handleDrop(ref: ref, toColumn: column.id, toIndex: index)
-                            }
                         }
                         Color.clear.frame(height: 80)
                     }
-                    .padding(10)
+                    .padding(12)
                 }
                 .frame(minHeight: max(0, height - 50))
             }
             .frame(maxHeight: .infinity)
-            .background(columnBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .background(style.columnBackground(accent: accent, hasCustomColor: hasCustomColor))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(
+                        style.columnStroke(accent: accent, hasCustomColor: hasCustomColor, isDropTargeted: isDropTargeted),
+                        lineWidth: isDropTargeted || hasCustomColor ? 2 : 1
+                    )
             )
-            .dropDestination(for: KanbanCardRef.self) { items, _ in
-                guard let ref = items.first else { return false }
-                return viewModel.handleDrop(ref: ref, toColumn: column.id, toIndex: column.cards.count)
+            .shadow(color: style.isLight ? Color.black.opacity(0.04) : accent.opacity(hasCustomColor ? 0.24 : 0.05), radius: hasCustomColor ? 18 : 8, y: 8)
+            .onDrop(of: [.kanbanCardRef, .plainText], isTargeted: $isDropTargeted) { providers in
+                viewModel.handleDrop(providers: providers, toColumn: column.id, toIndex: column.cards.count)
             }
         }
         .frame(width: width, height: height)
+        .sheet(isPresented: $isEditingColor) {
+            KanbanColorEditorSheet(
+                title: "\(column.name) 색상",
+                initialColorHex: column.colorHex,
+                onSave: { colorHex in
+                    viewModel.store.setColumnColor(column.id, colorHex: colorHex)
+                    isEditingColor = false
+                },
+                onCancel: { isEditingColor = false }
+            )
+        }
     }
 
-    private var header: some View {
+    private func header(style: KanbanBoardStyle, accent: Color) -> some View {
         HStack {
-            if let hex = column.colorHex, let color = Color.fromHex(hex) {
-                Circle().fill(color).frame(width: 16, height: 16)
-            }
+            Circle()
+                .fill(accent)
+                .frame(width: 11, height: 11)
+                .shadow(color: style.isLight ? .clear : accent.opacity(0.75), radius: 5)
             if isRenaming {
                 TextField("이름", text: $renameValue, onCommit: commitRename)
                     .textFieldStyle(.roundedBorder)
@@ -74,15 +95,15 @@ struct ColumnView: View {
                     .frame(maxWidth: 240)
             } else {
                 Text(column.name)
-                    .font(.appTitle)
+                    .font(.system(size: 20, weight: .bold))
                     .onTapGesture(count: 2, perform: beginRename)
             }
             Text("\(column.cards.count)")
-                .font(.appBody)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(style.isLight ? Color.secondary : Color.white.opacity(0.65))
                 .padding(.horizontal, 10)
-                .padding(.vertical, 2)
-                .background(Capsule().fill(Color.primary.opacity(0.08)))
+                .padding(.vertical, 4)
+                .background(Capsule().fill(style.isLight ? Color.black.opacity(0.04) : Color.white.opacity(0.07)))
             Spacer()
             Button {
                 viewModel.startNewCard(in: column.id)
@@ -93,17 +114,10 @@ struct ColumnView: View {
             .buttonStyle(.borderless)
             Menu {
                 Button("이름 변경", action: beginRename)
-                Menu("색상") {
-                    Button("기본") { viewModel.store.setColumnColor(column.id, colorHex: nil) }
-                    ForEach(["#4A90E2", "#7ED321", "#F5A623", "#E94B3C", "#BD10E0"], id: \.self) { hex in
-                        Button {
-                            viewModel.store.setColumnColor(column.id, colorHex: hex)
-                        } label: {
-                            Label("", systemImage: "circle.fill")
-                                .foregroundStyle(Color.fromHex(hex) ?? .accentColor)
-                            Text(hex)
-                        }
-                    }
+                Button {
+                    isEditingColor = true
+                } label: {
+                    Label("색상 변경", systemImage: "paintpalette")
                 }
                 Divider()
                 Button(role: .destructive) {
@@ -120,14 +134,13 @@ struct ColumnView: View {
             .fixedSize()
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-    }
-
-    private var columnBackground: Color {
-        if let hex = column.colorHex, let color = Color.fromHex(hex) {
-            return color.opacity(0.22)
+        .padding(.vertical, 14)
+        .background(style.headerFill)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(style.isLight ? style.divider : accent.opacity(column.colorHex == nil ? 0.28 : 0.45))
+                .frame(height: 1)
         }
-        return Color.primary.opacity(0.04)
     }
 
     private func beginRename() {
@@ -142,5 +155,33 @@ struct ColumnView: View {
             viewModel.renameColumn(column.id, name: trimmed)
         }
         isRenaming = false
+    }
+}
+
+private struct DraggableCardRow: View {
+    let boardId: UUID
+    let columnId: UUID
+    let index: Int
+    let card: KanbanCard
+    let labels: [KanbanLabel]
+    @Bindable var viewModel: KanbanViewModel
+
+    var body: some View {
+        CardView(
+            card: card,
+            labels: labels,
+            onTap: { viewModel.editCard(card) },
+            onDelete: { viewModel.requestDelete(card) }
+        )
+        .onDrag {
+            viewModel.dragProvider(ref: KanbanCardRef(
+                cardId: card.id,
+                boardId: boardId,
+                sourceColumnId: columnId
+            ))
+        }
+        .onDrop(of: [.kanbanCardRef, .plainText], isTargeted: nil) { providers in
+            viewModel.handleDrop(providers: providers, toColumn: columnId, toIndex: index)
+        }
     }
 }

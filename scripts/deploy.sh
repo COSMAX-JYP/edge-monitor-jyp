@@ -10,6 +10,7 @@ INSTALL_DIR="$HOME/Applications"
 INSTALL_PATH="$INSTALL_DIR/$APP_NAME.app"
 BUILD_DIR="build"
 PRODUCT_PATH="$BUILD_DIR/Build/Products/Release/$APP_NAME.app"
+ENTITLEMENTS_PATH="$APP_NAME/$APP_NAME.entitlements"
 
 echo "[1/5] Release 빌드 (캐시 활용, 첫 빌드는 수 분 소요)..."
 xcodebuild -project "$APP_NAME.xcodeproj" \
@@ -44,7 +45,7 @@ xattr -dr com.apple.quarantine "$INSTALL_PATH" 2>/dev/null || true
 DEV_IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Apple Development/{print $2; exit}')
 if [ -n "$DEV_IDENTITY" ]; then
   echo "  → Apple Development 인증서로 서명: $DEV_IDENTITY"
-  codesign --force --deep --sign "$DEV_IDENTITY" --options=runtime "$INSTALL_PATH" 2>&1 | tail -3 || true
+  codesign --force --deep --sign "$DEV_IDENTITY" --options=runtime --entitlements "$ENTITLEMENTS_PATH" "$INSTALL_PATH" 2>&1 | tail -3 || true
 else
   echo "  → Apple Development 인증서 없음, ad-hoc 서명 유지"
 fi

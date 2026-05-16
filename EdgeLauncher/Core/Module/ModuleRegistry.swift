@@ -94,6 +94,7 @@ final class ModuleRegistry: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        ModuleIconCustomizationStore.migrateLegacyDiscordIcons(defaults: defaults)
         if let stored = defaults.array(forKey: hiddenKey) as? [String] {
             hiddenIDs = Set(stored)
         }
@@ -123,6 +124,11 @@ final class ModuleRegistry: ObservableObject {
 
     func module(id: String) -> AnyEdgeModule? {
         modules.first { $0.id == id }
+    }
+
+    func iconCustomization(for id: String) -> IconCustomization? {
+        ModuleIconCustomizationStore.customization(for: id, defaults: defaults)
+            ?? module(id: id)?.iconCustomization
     }
 
     var visibleModules: [AnyEdgeModule] {

@@ -10,6 +10,7 @@ struct Sidebar: View {
     @State private var draggingID: String?
     @State private var isEditing: Bool = false
     @State private var selectedSlotID: String?
+    @State private var editingIconModuleID: String?
 
     private let columns = [
         GridItem(.fixed(EdgeTheme.tabTileWidth), spacing: 4),
@@ -44,6 +45,15 @@ struct Sidebar: View {
             Rectangle()
                 .fill(EdgeTheme.stroke(isLight: isLightTheme))
                 .frame(width: 1)
+        }
+        .sheet(item: iconEditorBinding) { module in
+            ModuleIconEditorSheet(
+                moduleID: module.id,
+                title: module.title,
+                systemIconName: module.iconName,
+                initialCustomization: registry.iconCustomization(for: module.id),
+                onClose: { editingIconModuleID = nil }
+            )
         }
     }
 
@@ -113,7 +123,7 @@ struct Sidebar: View {
                     title: module.title,
                     isActive: !isEditing && router.activeID == module.id,
                     badgeCount: isEditing ? 0 : (badges.counts[module.id] ?? 0),
-                    customIcon: module.iconCustomization
+                    customIcon: registry.iconCustomization(for: module.id)
                 ) {
                     if isEditing {
                         handleEditTap(slotID: slot.id)
@@ -124,7 +134,7 @@ struct Sidebar: View {
                 .overlay(selectionOverlay(isSelected: isSelected))
                 .opacity(draggingID == module.id ? 0.4 : 1)
                 .scaleEffect(isSelected ? 0.96 : 1)
-                .contextMenu { reorderMenu(for: module.id) }
+                .contextMenu { moduleMenu(for: module.id) }
                 .onDrag {
                     draggingID = module.id
                     return NSItemProvider(object: module.id as NSString)
@@ -186,6 +196,18 @@ struct Sidebar: View {
         themeMode == "light"
     }
 
+    private var iconEditorBinding: Binding<AnyEdgeModule?> {
+        Binding(
+            get: {
+                guard let id = editingIconModuleID else { return nil }
+                return registry.module(id: id)
+            },
+            set: { module in
+                editingIconModuleID = module?.id
+            }
+        )
+    }
+
     private func handleEditTap(slotID: String) {
         if let selected = selectedSlotID {
             if selected == slotID {
@@ -202,19 +224,13 @@ struct Sidebar: View {
     }
 
     @ViewBuilder
-    private func reorderMenu(for id: String) -> some View {
-        if let idx = registry.modules.firstIndex(where: { $0.id == id }) {
-            let lastIdx = registry.modules.count - 1
-            Button("위로 이동") { registry.reorder(from: idx, to: idx - 1) }
-                .disabled(idx == 0)
-            Button("아래로 이동") { registry.reorder(from: idx, to: idx + 1) }
-                .disabled(idx >= lastIdx)
-            Divider()
-            Button("맨 위로") { registry.reorder(from: idx, to: 0) }
-                .disabled(idx == 0)
-            Button("맨 아래로") { registry.reorder(from: idx, to: lastIdx) }
-                .disabled(idx >= lastIdx)
-            Divider()
+    private func moduleMenu(for id: String) -> some View {
+        if registry.modules.contains(where: { $0.id == id }) {
+            Button {
+                editingIconModuleID = id
+            } label: {
+                Label("아이콘 변경", systemImage: "photo")
+            }
             Button("이 탭 숨기기") { registry.setVisible(id, visible: false) }
         }
     }

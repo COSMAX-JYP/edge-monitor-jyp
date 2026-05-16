@@ -14,7 +14,7 @@ final class WidgetDashboardModule: EdgeModule {
     }
 
     func didBecomeActive() {
-        Task { await Self.eventVM.requestAccess() }
+        Self.eventVM.refreshAuthorizationState()
         Self.weather.start()
     }
 

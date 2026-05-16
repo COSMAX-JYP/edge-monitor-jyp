@@ -5,9 +5,13 @@ struct CardView: View {
     let labels: [KanbanLabel]
     var onTap: () -> Void
     var onDelete: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let style = KanbanBoardStyle(isLight: colorScheme == .light)
+        let accent = cardAccent(style: style)
+
+        VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 4) {
                 ForEach(stripeLabels.prefix(4), id: \.id) { label in
                     Capsule()
@@ -18,7 +22,8 @@ struct CardView: View {
                 Spacer()
             }
             Text(card.title.isEmpty ? "(제목 없음)" : card.title)
-                .font(.appHeading)
+                .font(.system(size: 19, weight: .bold))
+                .foregroundStyle(style.isLight ? Color(red: 0.10, green: 0.13, blue: 0.18) : Color.white.opacity(0.96))
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
             if let due = card.dueDate {
@@ -59,15 +64,16 @@ struct CardView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
+        .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(cardBackground)
+                .fill(cardBackground(style: style, accent: accent))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                .strokeBorder(cardStroke(style: style, accent: accent), lineWidth: style.isLight ? 1 : 1.5)
         )
+        .shadow(color: style.isLight ? Color.black.opacity(0.05) : accent.opacity(card.colorHex == nil ? 0.08 : 0.20), radius: style.isLight ? 14 : 18, y: 8)
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)
         .contextMenu {
@@ -81,11 +87,25 @@ struct CardView: View {
         labels.filter { card.labelIds.contains($0.id) }
     }
 
-    private var cardBackground: Color {
+    private func cardAccent(style: KanbanBoardStyle) -> Color {
         if let hex = card.colorHex, let parsed = Color.fromHex(hex) {
-            return parsed.opacity(0.15)
+            return parsed
         }
-        return Color.primary.opacity(0.04)
+        return style.defaultAccent
+    }
+
+    private func cardBackground(style: KanbanBoardStyle, accent: Color) -> Color {
+        if card.colorHex != nil {
+            return style.isLight ? accent.opacity(0.08) : accent.opacity(0.12)
+        }
+        return style.cardFill
+    }
+
+    private func cardStroke(style: KanbanBoardStyle, accent: Color) -> Color {
+        if card.colorHex != nil {
+            return accent.opacity(style.isLight ? 0.35 : 0.58)
+        }
+        return style.cardLine
     }
 
     private func dueLabel(_ due: Date) -> String {

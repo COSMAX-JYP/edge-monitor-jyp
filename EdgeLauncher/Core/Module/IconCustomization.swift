@@ -55,3 +55,54 @@ enum IconStorage {
         }
     }
 }
+
+enum ModuleIconCustomizationStore {
+    static func customization(for moduleID: String, defaults: UserDefaults = .standard) -> IconCustomization? {
+        let path = (defaults.string(forKey: imageKey(moduleID)) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !path.isEmpty, FileManager.default.fileExists(atPath: path) else { return nil }
+        let scale = defaults.object(forKey: scaleKey(moduleID)) as? Double ?? 1.0
+        let offsetX = defaults.object(forKey: offsetXKey(moduleID)) as? Double ?? 0
+        let offsetY = defaults.object(forKey: offsetYKey(moduleID)) as? Double ?? 0
+        return IconCustomization(imagePath: path, scale: scale, offsetX: offsetX, offsetY: offsetY)
+    }
+
+    static func save(_ customization: IconCustomization, for moduleID: String, defaults: UserDefaults = .standard) {
+        defaults.set(customization.imagePath, forKey: imageKey(moduleID))
+        defaults.set(customization.scale, forKey: scaleKey(moduleID))
+        defaults.set(customization.offsetX, forKey: offsetXKey(moduleID))
+        defaults.set(customization.offsetY, forKey: offsetYKey(moduleID))
+        NotificationCenter.default.post(name: .moduleIconChanged, object: nil)
+    }
+
+    static func clear(for moduleID: String, defaults: UserDefaults = .standard) {
+        try? IconStorage.remove(moduleID: moduleID)
+        defaults.removeObject(forKey: imageKey(moduleID))
+        defaults.removeObject(forKey: scaleKey(moduleID))
+        defaults.removeObject(forKey: offsetXKey(moduleID))
+        defaults.removeObject(forKey: offsetYKey(moduleID))
+        NotificationCenter.default.post(name: .moduleIconChanged, object: nil)
+    }
+
+    static func migrateLegacyDiscordIcons(defaults: UserDefaults = .standard) {
+        for id in ["messenger", "messenger-2", "messenger-3"] where defaults.string(forKey: imageKey(id)) == nil {
+            let legacyImageKey = "app.\(id).iconImage"
+            let path = (defaults.string(forKey: legacyImageKey) ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !path.isEmpty, FileManager.default.fileExists(atPath: path) else { continue }
+            defaults.set(path, forKey: imageKey(id))
+            defaults.set(defaults.object(forKey: "app.\(id).iconScale") as? Double ?? 1.0, forKey: scaleKey(id))
+            defaults.set(defaults.object(forKey: "app.\(id).iconOffsetX") as? Double ?? 0, forKey: offsetXKey(id))
+            defaults.set(defaults.object(forKey: "app.\(id).iconOffsetY") as? Double ?? 0, forKey: offsetYKey(id))
+        }
+    }
+
+    static func imageKey(_ moduleID: String) -> String { "app.moduleIcon.\(moduleID).image" }
+    static func scaleKey(_ moduleID: String) -> String { "app.moduleIcon.\(moduleID).scale" }
+    static func offsetXKey(_ moduleID: String) -> String { "app.moduleIcon.\(moduleID).offsetX" }
+    static func offsetYKey(_ moduleID: String) -> String { "app.moduleIcon.\(moduleID).offsetY" }
+}
+
+extension Notification.Name {
+    static let moduleIconChanged = Notification.Name("edge.module.iconChanged")
+}

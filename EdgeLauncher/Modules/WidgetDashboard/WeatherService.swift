@@ -1,6 +1,7 @@
 import Combine
 import CoreLocation
 import Foundation
+import AppKit
 import os
 
 struct WeatherSnapshot {
@@ -48,6 +49,7 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     @Published var hasLocationAccess = false
     @Published var errorMessage: String?
     @Published var lastUpdated: Date?
+    @Published var locationStatusText = ""
 
     private let manager = CLLocationManager()
     private var timer: Timer?
@@ -58,6 +60,7 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        refreshAuthorizationState()
     }
 
     deinit {
@@ -67,8 +70,7 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     }
 
     func start() {
-        manager.requestAlwaysAuthorization()
-        manager.startUpdatingLocation()
+        requestAccess()
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.refresh() }
@@ -79,6 +81,32 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
         manager.stopUpdatingLocation()
         timer?.invalidate()
         timer = nil
+    }
+
+    func requestAccess() {
+        let status = manager.authorizationStatus
+        locationStatusText = Self.statusDescription(status)
+        switch status {
+        case .notDetermined:
+            NSApp.activate(ignoringOtherApps: true)
+            manager.requestWhenInUseAuthorization()
+        case .authorizedAlways, .authorized:
+            hasLocationAccess = true
+            errorMessage = nil
+            manager.startUpdatingLocation()
+        case .denied, .restricted:
+            hasLocationAccess = false
+            openLocationPrivacySettings()
+        @unknown default:
+            hasLocationAccess = false
+            openLocationPrivacySettings()
+        }
+    }
+
+    func refreshAuthorizationState() {
+        let status = manager.authorizationStatus
+        locationStatusText = Self.statusDescription(status)
+        hasLocationAccess = (status == .authorizedAlways || status == .authorized)
     }
 
     func refresh() async {
@@ -141,16 +169,41 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         Task { @MainActor in
             self.errorMessage = error.localizedDescription
+            self.refreshAuthorizationState()
         }
     }
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
             let status = manager.authorizationStatus
+            self.locationStatusText = Self.statusDescription(status)
             self.hasLocationAccess = (status == .authorizedAlways || status == .authorized)
             if self.hasLocationAccess {
+                self.errorMessage = nil
                 manager.startUpdatingLocation()
             }
+        }
+    }
+
+    private func openLocationPrivacySettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices") else {
+            return
+        }
+        NSWorkspace.shared.open(url)
+    }
+
+    private static func statusDescription(_ status: CLAuthorizationStatus) -> String {
+        switch status {
+        case .notDetermined:
+            return "권한 미요청"
+        case .restricted:
+            return "제한됨"
+        case .denied:
+            return "거부됨"
+        case .authorizedAlways, .authorized:
+            return "허용됨"
+        @unknown default:
+            return "알 수 없음"
         }
     }
 }

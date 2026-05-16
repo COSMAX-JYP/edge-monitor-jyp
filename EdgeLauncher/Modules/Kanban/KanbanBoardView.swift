@@ -2,6 +2,7 @@ import SwiftUI
 
 struct KanbanBoardView: View {
     @Bindable var viewModel: KanbanViewModel
+    @Environment(\.colorScheme) private var colorScheme
 
     private let columnSpacing: CGFloat = 12
     private let minColumnWidth: CGFloat = 420
@@ -19,6 +20,7 @@ struct KanbanBoardView: View {
                 content(width: proxy.size.width, height: proxy.size.height)
             }
         }
+        .background(style.boardBackground)
         .sheet(item: $viewModel.editingCard) { card in
             CardEditorSheet(
                 initial: card,
@@ -88,6 +90,10 @@ struct KanbanBoardView: View {
         }
     }
 
+    private var style: KanbanBoardStyle {
+        KanbanBoardStyle(isLight: colorScheme == .light)
+    }
+
     private var pendingDeleteBoardBinding: Binding<Bool> {
         Binding(
             get: { viewModel.pendingDeleteBoardId != nil },
@@ -117,6 +123,7 @@ struct KanbanBoardView: View {
                         .frame(height: height)
                     }
                     .padding(.horizontal, 12)
+                    .padding(.vertical, 14)
                     .frame(minWidth: width - detailWidth(), minHeight: height, alignment: .leading)
                 }
                 .frame(maxWidth: .infinity)

@@ -55,32 +55,164 @@ struct BoardEditorSheet: View {
 struct ColorSwatchPicker: View {
     @Binding var colorHex: String
 
-    private let palette: [String] = [
-        "#4A90E2", "#50E3C2", "#7ED321", "#F5A623",
-        "#E94B3C", "#BD10E0", "#9013FE", "#417505",
-        "#9B9B9B", "#000000"
-    ]
+    private let columns = Array(repeating: GridItem(.fixed(28), spacing: 8), count: 10)
 
     var body: some View {
-        HStack(spacing: 6) {
-            ForEach(palette, id: \.self) { hex in
-                Button {
-                    colorHex = hex
-                } label: {
-                    Circle()
-                        .fill(Color.fromHex(hex) ?? .accentColor)
-                        .frame(width: 22, height: 22)
-                        .overlay(
-                            Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: 1)
-                        )
-                        .overlay(
-                            Image(systemName: colorHex == hex ? "checkmark" : "")
-                                .font(.appCaptionBold)
-                                .foregroundStyle(.white)
-                        )
+        VStack(alignment: .leading, spacing: 10) {
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+                ForEach(KanbanColorPalette.presets, id: \.hex) { swatch in
+                    Button {
+                        colorHex = swatch.hex
+                    } label: {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.fromHex(swatch.hex) ?? .accentColor)
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(Color.primary.opacity(colorHex == swatch.hex ? 0.85 : 0.22), lineWidth: colorHex == swatch.hex ? 2 : 1)
+                            if colorHex == swatch.hex {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .shadow(radius: 2)
+                            }
+                        }
+                        .frame(width: 28, height: 28)
+                    }
+                    .buttonStyle(.plain)
+                    .help("\(swatch.name) \(swatch.hex)")
                 }
-                .buttonStyle(.plain)
+            }
+
+            HStack(spacing: 10) {
+                ColorPicker("", selection: Binding(
+                    get: { Color.fromHex(colorHex) ?? .accentColor },
+                    set: { if let hex = $0.hexString { colorHex = hex } }
+                ), supportsOpacity: false)
+                .labelsHidden()
+                .frame(width: 32)
+
+                TextField("#RRGGBB", text: Binding(
+                    get: { colorHex },
+                    set: { colorHex = KanbanColorPalette.normalizedHex($0) ?? colorHex }
+                ))
+                .font(.appCalloutMono)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 110)
             }
         }
+    }
+}
+
+enum KanbanColorPalette {
+    struct Swatch {
+        let name: String
+        let hex: String
+    }
+
+    static let presets: [Swatch] = [
+        Swatch(name: "Blue", hex: "#4A90E2"),
+        Swatch(name: "Cyan", hex: "#50E3C2"),
+        Swatch(name: "Green", hex: "#7ED321"),
+        Swatch(name: "Lime", hex: "#B8E986"),
+        Swatch(name: "Yellow", hex: "#F8E71C"),
+        Swatch(name: "Orange", hex: "#F5A623"),
+        Swatch(name: "Red", hex: "#E94B3C"),
+        Swatch(name: "Pink", hex: "#FF5FA2"),
+        Swatch(name: "Purple", hex: "#BD10E0"),
+        Swatch(name: "Violet", hex: "#9013FE"),
+        Swatch(name: "Teal", hex: "#00A6A6"),
+        Swatch(name: "Indigo", hex: "#2F54EB"),
+        Swatch(name: "Mint", hex: "#63D471"),
+        Swatch(name: "Brown", hex: "#8B572A"),
+        Swatch(name: "Gray", hex: "#9B9B9B"),
+        Swatch(name: "Black", hex: "#111827"),
+        Swatch(name: "Slate", hex: "#475569"),
+        Swatch(name: "Rose", hex: "#E11D48"),
+        Swatch(name: "Amber", hex: "#D97706"),
+        Swatch(name: "Emerald", hex: "#059669")
+    ]
+
+    static func normalizedHex(_ input: String) -> String? {
+        var trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if trimmed.hasPrefix("#") {
+            trimmed.removeFirst()
+        }
+        guard trimmed.count <= 6, trimmed.allSatisfy(\.isHexDigit) else { return nil }
+        if trimmed.count == 6 {
+            return "#\(trimmed)"
+        }
+        return "#\(trimmed)"
+    }
+}
+
+extension Color {
+    var hexString: String? {
+        guard let color = NSColor(self).usingColorSpace(.sRGB) else { return nil }
+        let red = Int(round(color.redComponent * 255))
+        let green = Int(round(color.greenComponent * 255))
+        let blue = Int(round(color.blueComponent * 255))
+        return String(format: "#%02X%02X%02X", red, green, blue)
+    }
+}
+
+struct KanbanColorEditorSheet: View {
+    let title: String
+    let initialColorHex: String?
+    var onSave: (String?) -> Void
+    var onCancel: () -> Void
+
+    @State private var colorHex: String
+    @State private var usesDefault: Bool
+
+    init(title: String, initialColorHex: String?, onSave: @escaping (String?) -> Void, onCancel: @escaping () -> Void) {
+        self.title = title
+        self.initialColorHex = initialColorHex
+        self.onSave = onSave
+        self.onCancel = onCancel
+        _colorHex = State(initialValue: initialColorHex ?? "#4A90E2")
+        _usesDefault = State(initialValue: initialColorHex == nil)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                Text(title).font(.appTitle)
+                Spacer()
+                Button("취소", action: onCancel).font(.appBody)
+                Button("저장") {
+                    onSave(usesDefault ? nil : colorHex)
+                }
+                .font(.appBodyBold)
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.return, modifiers: .command)
+            }
+
+            HStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(usesDefault ? Color.primary.opacity(0.08) : (Color.fromHex(colorHex) ?? .accentColor))
+                    .frame(width: 72, height: 72)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(Color.primary.opacity(0.16), lineWidth: 1)
+                    )
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(usesDefault ? "기본 색상" : colorHex)
+                        .font(.appHeading)
+                    Toggle("기본 색상 사용", isOn: $usesDefault)
+                        .font(.appCallout)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("색상 선택").font(.appFootnote).foregroundStyle(.secondary)
+                ColorSwatchPicker(colorHex: $colorHex)
+                    .disabled(usesDefault)
+                    .opacity(usesDefault ? 0.45 : 1)
+            }
+
+            Spacer()
+        }
+        .padding(24)
+        .appSheetFrame(width: 0.38...0.55, height: 0.44...0.65)
     }
 }

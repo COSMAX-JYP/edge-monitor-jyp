@@ -65,9 +65,12 @@ struct WeatherPanel: View {
         VStack(alignment: .leading, spacing: 8) {
             Label("위치 권한이 필요합니다", systemImage: "location.slash")
                 .font(.appFootnoteBold)
+            Text("상태: \(weather.locationStatusText)")
+                .font(.appFootnote)
+                .foregroundStyle(.secondary)
             Text("시스템 설정 > 개인정보 보호 및 보안 > 위치 서비스에서 EdgeLauncher 허용.")
                 .font(.appFootnote).foregroundStyle(.secondary)
-            Button("다시 시도") { weather.start() }.font(.appFootnote)
+            Button("권한 다시 요청") { weather.requestAccess() }.font(.appFootnote)
         }
         .padding(12)
         .background(Color.yellow.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))

@@ -1,6 +1,4 @@
 import SwiftUI
-import AppKit
-import UniformTypeIdentifiers
 
 extension Notification.Name {
     static let discordReloadRequested = Notification.Name("edge.discord.reloadRequested")
@@ -155,10 +153,6 @@ private struct DiscordInstanceEditor: View {
     @State private var iconName: String = ""
     @State private var savedToast: Bool = false
     @State private var iconPickerOpen: Bool = false
-    @State private var imagePath: String = ""
-    @State private var imageScale: Double = 1.0
-    @State private var imageOffsetX: Double = 0
-    @State private var imageOffsetY: Double = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -236,7 +230,6 @@ private struct DiscordInstanceEditor: View {
                 }
             }
 
-            customImageRow
         }
         .padding(14)
         .background(
@@ -252,146 +245,7 @@ private struct DiscordInstanceEditor: View {
             title = defaults.string(forKey: config.titleKey) ?? ""
             url = defaults.string(forKey: config.urlKey) ?? ""
             iconName = defaults.string(forKey: config.iconKey) ?? ""
-            imagePath = defaults.string(forKey: config.iconImageKey) ?? ""
-            imageScale = (defaults.object(forKey: config.iconScaleKey) as? Double) ?? 1.0
-            imageOffsetX = (defaults.object(forKey: config.iconOffsetXKey) as? Double) ?? 0
-            imageOffsetY = (defaults.object(forKey: config.iconOffsetYKey) as? Double) ?? 0
         }
-    }
-
-    @ViewBuilder
-    private var customImageRow: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text("이미지")
-                .frame(width: 64, alignment: .trailing)
-                .foregroundStyle(.secondary)
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 10) {
-                    // 미리보기
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.primary.opacity(0.05))
-                            .frame(width: 84, height: 64)
-                        if !imagePath.isEmpty, let nsImage = NSImage(contentsOfFile: imagePath) {
-                            Image(nsImage: nsImage)
-                                .resizable()
-                                .interpolation(.high)
-                                .aspectRatio(contentMode: .fit)
-                                .scaleEffect(imageScale)
-                                .offset(x: imageOffsetX, y: imageOffsetY)
-                                .frame(width: 84, height: 64)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                        } else {
-                            Image(systemName: "photo")
-                                .font(.system(size: 18))
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 6) {
-                            Button {
-                                pickImage()
-                            } label: {
-                                Label("이미지 선택", systemImage: "photo.badge.plus")
-                                    .font(.system(size: 12, weight: .medium))
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                            if !imagePath.isEmpty {
-                                Button(role: .destructive) {
-                                    clearImage()
-                                } label: {
-                                    Label("제거", systemImage: "trash")
-                                        .font(.system(size: 12, weight: .medium))
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                            }
-                        }
-                        Text(imagePath.isEmpty ? "이미지를 지정하면 SF Symbol 대신 그 이미지가 표시됩니다." : URL(fileURLWithPath: imagePath).lastPathComponent)
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                            .lineLimit(1)
-                    }
-                    Spacer()
-                }
-                if !imagePath.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text("크기")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .frame(width: 36, alignment: .leading)
-                            Slider(value: $imageScale, in: 0.5...2.0, step: 0.05)
-                            Text(String(format: "%.2fx", imageScale))
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                                .frame(width: 44, alignment: .trailing)
-                        }
-                        HStack {
-                            Text("좌우")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .frame(width: 36, alignment: .leading)
-                            Slider(value: $imageOffsetX, in: -30...30, step: 1)
-                            Text("\(Int(imageOffsetX))")
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                                .frame(width: 44, alignment: .trailing)
-                        }
-                        HStack {
-                            Text("상하")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .frame(width: 36, alignment: .leading)
-                            Slider(value: $imageOffsetY, in: -30...30, step: 1)
-                            Text("\(Int(imageOffsetY))")
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                                .frame(width: 44, alignment: .trailing)
-                        }
-                    }
-                    .onChange(of: imageScale) { _, _ in commitImageAdjustments() }
-                    .onChange(of: imageOffsetX) { _, _ in commitImageAdjustments() }
-                    .onChange(of: imageOffsetY) { _, _ in commitImageAdjustments() }
-                }
-            }
-        }
-    }
-
-    private func pickImage() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.allowedContentTypes = [.png, .jpeg, .heic, .gif, .tiff, .image]
-        panel.prompt = "선택"
-        if panel.runModal() == .OK, let url = panel.url {
-            do {
-                let dest = try IconStorage.install(sourceURL: url, moduleID: config.id)
-                imagePath = dest.path
-                commitImageAdjustments()
-            } catch {
-                NSSound.beep()
-            }
-        }
-    }
-
-    private func clearImage() {
-        try? IconStorage.remove(moduleID: config.id)
-        imagePath = ""
-        imageScale = 1.0
-        imageOffsetX = 0
-        imageOffsetY = 0
-        commitImageAdjustments()
-    }
-
-    private func commitImageAdjustments() {
-        let defaults = UserDefaults.standard
-        defaults.set(imagePath, forKey: config.iconImageKey)
-        defaults.set(imageScale, forKey: config.iconScaleKey)
-        defaults.set(imageOffsetX, forKey: config.iconOffsetXKey)
-        defaults.set(imageOffsetY, forKey: config.iconOffsetYKey)
-        NotificationCenter.default.post(name: .moduleIconChanged, object: nil)
     }
 
     private var effectiveIconName: String {
@@ -455,8 +309,4 @@ private struct DiscordInstanceEditor: View {
             withAnimation(.easeOut(duration: 0.2)) { savedToast = false }
         }
     }
-}
-
-extension Notification.Name {
-    static let moduleIconChanged = Notification.Name("edge.module.iconChanged")
 }
