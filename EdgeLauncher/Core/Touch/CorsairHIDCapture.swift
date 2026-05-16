@@ -170,7 +170,10 @@ final class CorsairHIDCapture {
         let cgCursor = CGPoint(x: appKitCursor.x, y: mainHeight - appKitCursor.y)
         savedCursorCG = cgCursor
 
-        // 2. 클릭 동안 커서 깜빡임 방지를 위해 잠시 숨김.
+        // 2. 합성 클릭이 앱 로컬 이벤트 모니터를 다시 타며 커서를 Edge로 고정하지 않도록 잠시 억제.
+        EdgeCursorGuard.suppressLocalSync(for: 0.35)
+
+        // 3. 클릭 동안 커서 깜빡임 방지를 위해 잠시 숨김.
         CGDisplayHideCursor(CGMainDisplayID())
         CGWarpMouseCursorPosition(point)
         usleep(5_000)
@@ -179,13 +182,22 @@ final class CorsairHIDCapture {
         up.post(tap: .cghidEventTap)
         usleep(5_000)
 
-        // 3. 원래 위치로 복귀 + 커서 다시 보이기.
-        CGWarpMouseCursorPosition(cgCursor)
+        // 4. 원래 위치로 복귀 + 커서 다시 보이기. 이벤트 전달 지연에 대비해 짧게 한 번 더 복귀시킨다.
+        restoreCursor(to: cgCursor)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [cgCursor] in
+            EdgeCursorGuard.suppressLocalSync(for: 0.20)
+            self.restoreCursor(to: cgCursor)
+        }
         CGDisplayShowCursor(CGMainDisplayID())
 
         if UserDefaults.standard.bool(forKey: "app.debugHIDLogging") {
             Self.log("click @ (\(Int(point.x)),\(Int(point.y))) from touch=(\(Int(currentX)),\(Int(currentY))) restored to (\(Int(cgCursor.x)),\(Int(cgCursor.y)))")
         }
+    }
+
+    private func restoreCursor(to point: CGPoint) {
+        CGWarpMouseCursorPosition(point)
+        CGAssociateMouseAndMouseCursorPosition(boolean_t(1))
     }
 
     private func emitDrag() {

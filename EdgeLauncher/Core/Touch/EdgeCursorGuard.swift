@@ -4,6 +4,7 @@ import CoreGraphics
 final class EdgeCursorGuard {
     private let displayService: XeneonDisplayService
     private var localEventMonitor: Any?
+    private static var suppressLocalSyncUntil: Date = .distantPast
 
     init(displayService: XeneonDisplayService) {
         self.displayService = displayService
@@ -30,6 +31,7 @@ final class EdgeCursorGuard {
 
     @MainActor
     private func handleLocal(_ event: NSEvent) {
+        guard !Self.isLocalSyncSuppressed() else { return }
         guard let edgeScreen = displayService.edgeScreen else { return }
         let eventPoint = Self.screenPoint(of: event)
         guard edgeScreen.frame.contains(eventPoint) else { return }
@@ -84,5 +86,13 @@ final class EdgeCursorGuard {
     static func appKitPoint(fromQuartzPoint point: CGPoint, mainScreenHeight: CGFloat? = nil) -> CGPoint {
         let height = mainScreenHeight ?? NSScreen.screens.first?.frame.height ?? 0
         return CGPoint(x: point.x, y: height - point.y)
+    }
+
+    static func suppressLocalSync(for interval: TimeInterval) {
+        suppressLocalSyncUntil = Date().addingTimeInterval(interval)
+    }
+
+    static func isLocalSyncSuppressed(now: Date = Date()) -> Bool {
+        now < suppressLocalSyncUntil
     }
 }

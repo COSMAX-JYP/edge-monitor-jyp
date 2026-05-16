@@ -39,4 +39,11 @@ final class EdgeCursorGuardTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(mapped.y, edge.minY)
         XCTAssertLessThanOrEqual(mapped.y, edge.maxY)
     }
+
+    func test_suppressLocalSync_tracksActiveWindow() {
+        EdgeCursorGuard.suppressLocalSync(for: 1)
+
+        XCTAssertTrue(EdgeCursorGuard.isLocalSyncSuppressed())
+        XCTAssertFalse(EdgeCursorGuard.isLocalSyncSuppressed(now: Date().addingTimeInterval(2)))
+    }
 }
