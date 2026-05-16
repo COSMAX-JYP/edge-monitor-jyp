@@ -1,8 +1,10 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ButtonGridView: View {
     let page: StreamDeckPage
     @Bindable var viewModel: StreamDeckViewModel
+    @State private var draggingButtonID: UUID?
 
     private let spacing: CGFloat = 12
 
@@ -36,7 +38,7 @@ struct ButtonGridView: View {
     @ViewBuilder
     private func slot(at position: GridPosition) -> some View {
         if let button = page.button(at: position) {
-            StreamDeckButtonView(
+            let buttonView = StreamDeckButtonView(
                 button: button,
                 isExecuting: viewModel.executingButtonId == button.id,
                 isFlashing: viewModel.lastFiredFlashId == button.id,
@@ -45,10 +47,35 @@ struct ButtonGridView: View {
                 onEdit: { viewModel.beginEditing(at: position) },
                 onDelete: { viewModel.deleteButton(at: position) }
             )
+            if viewModel.isEditing {
+                buttonView
+                    .onDrag {
+                        draggingButtonID = button.id
+                        return NSItemProvider(object: button.id.uuidString as NSString)
+                    }
+                    .onDrop(
+                        of: [.text],
+                        delegate: StreamDeckButtonDropDelegate(
+                            position: position,
+                            draggingButtonID: $draggingButtonID,
+                            moveButton: viewModel.moveButton
+                        )
+                    )
+            } else {
+                buttonView
+            }
         } else {
             EmptySlotView(isEditing: viewModel.isEditing) {
                 viewModel.beginEditing(at: position)
             }
+            .onDrop(
+                of: [.text],
+                delegate: StreamDeckButtonDropDelegate(
+                    position: position,
+                    draggingButtonID: $draggingButtonID,
+                    moveButton: viewModel.moveButton
+                )
+            )
         }
     }
 
@@ -155,5 +182,22 @@ struct ButtonGridView: View {
         let byWidth = usableWidth / cols
         let byHeight = usableHeight / rows
         return max(min(byWidth, byHeight), 96)
+    }
+}
+
+private struct StreamDeckButtonDropDelegate: DropDelegate {
+    let position: GridPosition
+    @Binding var draggingButtonID: UUID?
+    var moveButton: (UUID, GridPosition) -> Void
+
+    func validateDrop(info: DropInfo) -> Bool {
+        draggingButtonID != nil
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        guard let buttonID = draggingButtonID else { return false }
+        moveButton(buttonID, position)
+        draggingButtonID = nil
+        return true
     }
 }

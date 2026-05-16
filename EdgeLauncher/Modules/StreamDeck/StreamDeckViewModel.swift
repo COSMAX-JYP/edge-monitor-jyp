@@ -71,6 +71,12 @@ final class StreamDeckViewModel {
         editingButton = nil
     }
 
+    func moveButton(id: UUID, to destination: GridPosition) {
+        store.moveButton(id: id, to: destination)
+        editingPosition = nil
+        editingButton = nil
+    }
+
     func tap(_ button: StreamDeckButton) {
         if button.action.requiresConfirmation {
             pendingConfirm = button

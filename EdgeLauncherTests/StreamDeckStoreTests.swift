@@ -19,15 +19,27 @@ final class StreamDeckStoreTests: XCTestCase {
     }
 
     func test_initial_seedsDefaultPage() {
-        let store = StreamDeckStore(url: tempURL)
+        let store = StreamDeckStore(url: tempURL, seedDefaultApps: false)
         XCTAssertEqual(store.data.pages.count, 1)
         XCTAssertNotNil(store.activePage)
-        XCTAssertEqual(store.activePage?.gridSize.rows, 3)
+        XCTAssertEqual(store.activePage?.gridSize.rows, 4)
         XCTAssertEqual(store.activePage?.gridSize.cols, 12)
     }
 
-    func test_upsertButton_inserts() {
+    func test_initial_seedsRequestedAppButtons() {
         let store = StreamDeckStore(url: tempURL)
+        let labels = Set(store.activePage?.buttons.map(\.label) ?? [])
+        XCTAssertTrue(labels.isSuperset(of: ["Warp", "Teams", "Outlook", "Obsidian", "DBeaver", "CotEditor", "GPT", "Claude", "메모", "설정", "Chrome", "카카오톡", "Excel", "KMS", "LOG-JYP"]))
+    }
+
+    func test_initial_seedsRequestedLinkButtons() {
+        let store = StreamDeckStore(url: tempURL)
+        let labels = Set(store.activePage?.buttons.map(\.label) ?? [])
+        XCTAssertTrue(labels.isSuperset(of: ["PI혁신부문", "EAI_Datahub", "비상연락망", "연차현황"]))
+    }
+
+    func test_upsertButton_inserts() {
+        let store = StreamDeckStore(url: tempURL, seedDefaultApps: false)
         let button = StreamDeckButton(
             position: GridPosition(row: 0, col: 0),
             label: "Test",
@@ -39,7 +51,7 @@ final class StreamDeckStoreTests: XCTestCase {
     }
 
     func test_upsertButton_updatesAtSamePosition() {
-        let store = StreamDeckStore(url: tempURL)
+        let store = StreamDeckStore(url: tempURL, seedDefaultApps: false)
         let pos = GridPosition(row: 0, col: 0)
         let first = StreamDeckButton(position: pos, label: "A", action: .openURL(url: "https://a.com"))
         store.upsertButton(first)
@@ -50,15 +62,28 @@ final class StreamDeckStoreTests: XCTestCase {
     }
 
     func test_deleteButton_atPosition() {
-        let store = StreamDeckStore(url: tempURL)
+        let store = StreamDeckStore(url: tempURL, seedDefaultApps: false)
         let pos = GridPosition(row: 1, col: 2)
         store.upsertButton(StreamDeckButton(position: pos, label: "X"))
         store.deleteButton(at: pos)
         XCTAssertTrue(store.activePage?.buttons.isEmpty ?? false)
     }
 
+    func test_moveButton_swapsOccupiedPosition() {
+        let store = StreamDeckStore(url: tempURL, seedDefaultApps: false)
+        let first = StreamDeckButton(position: GridPosition(row: 0, col: 0), label: "A")
+        let second = StreamDeckButton(position: GridPosition(row: 0, col: 1), label: "B")
+        store.upsertButton(first)
+        store.upsertButton(second)
+
+        store.moveButton(id: first.id, to: GridPosition(row: 0, col: 1))
+
+        XCTAssertEqual(store.activePage?.buttons.first { $0.id == first.id }?.position, GridPosition(row: 0, col: 1))
+        XCTAssertEqual(store.activePage?.buttons.first { $0.id == second.id }?.position, GridPosition(row: 0, col: 0))
+    }
+
     func test_persistence_roundtrip() async throws {
-        let store = StreamDeckStore(url: tempURL)
+        let store = StreamDeckStore(url: tempURL, seedDefaultApps: false)
         let button = StreamDeckButton(
             position: GridPosition(row: 2, col: 5),
             label: "Persist",
@@ -67,7 +92,7 @@ final class StreamDeckStoreTests: XCTestCase {
         store.upsertButton(button)
         try await store.flush()
 
-        let reloaded = StreamDeckStore(url: tempURL)
+        let reloaded = StreamDeckStore(url: tempURL, seedDefaultApps: false)
         let restored = reloaded.activePage?.buttons.first
         XCTAssertEqual(restored?.label, "Persist")
         if case .keystroke(let mods, let key)? = restored?.action {

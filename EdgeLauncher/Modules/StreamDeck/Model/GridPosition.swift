@@ -9,7 +9,7 @@ nonisolated struct GridSize: Codable, Hashable, Sendable {
     let rows: Int
     let cols: Int
 
-    static let `default` = GridSize(rows: 3, cols: 12)
+    static let `default` = GridSize(rows: 4, cols: 12)
 
     var totalSlots: Int { rows * cols }
 

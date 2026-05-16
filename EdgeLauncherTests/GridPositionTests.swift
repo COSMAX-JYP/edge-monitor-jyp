@@ -3,21 +3,21 @@ import XCTest
 
 final class GridPositionTests: XCTestCase {
 
-    func test_gridSize_default_is3x12() {
-        XCTAssertEqual(GridSize.default.rows, 3)
+    func test_gridSize_default_is4x12() {
+        XCTAssertEqual(GridSize.default.rows, 4)
         XCTAssertEqual(GridSize.default.cols, 12)
-        XCTAssertEqual(GridSize.default.totalSlots, 36)
+        XCTAssertEqual(GridSize.default.totalSlots, 48)
     }
 
     func test_gridSize_contains_inRange() {
         let size = GridSize.default
         XCTAssertTrue(size.contains(GridPosition(row: 0, col: 0)))
-        XCTAssertTrue(size.contains(GridPosition(row: 2, col: 11)))
+        XCTAssertTrue(size.contains(GridPosition(row: 3, col: 11)))
     }
 
     func test_gridSize_contains_outOfRange() {
         let size = GridSize.default
-        XCTAssertFalse(size.contains(GridPosition(row: 3, col: 0)))
+        XCTAssertFalse(size.contains(GridPosition(row: 4, col: 0)))
         XCTAssertFalse(size.contains(GridPosition(row: 0, col: 12)))
         XCTAssertFalse(size.contains(GridPosition(row: -1, col: 0)))
     }
