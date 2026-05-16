@@ -61,9 +61,9 @@ final class AtomicJSONStore<T: Codable & Versioned> {
             if Task.isCancelled { return }
             do {
                 try AtomicJSONStore.persist(value: snapshot, url: url, rotator: rotator)
-                await self?.clearPendingAndError()
+                self?.clearPendingAndError()
             } catch {
-                await self?.recordError(error)
+                self?.recordError(error)
             }
         }
     }

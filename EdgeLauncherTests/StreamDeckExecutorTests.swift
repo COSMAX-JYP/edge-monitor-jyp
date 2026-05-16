@@ -6,7 +6,7 @@ final class StreamDeckExecutorTests: XCTestCase {
 
     func test_noAction_throwsNoAction() async {
         do {
-            try await ActionExecutor.run(.none)
+            _ = try await ActionExecutor.run(.none)
             XCTFail("expected throw")
         } catch let err as ActionExecutorError {
             if case .noAction = err {} else { XCTFail("wrong error \(err)") }
@@ -17,7 +17,7 @@ final class StreamDeckExecutorTests: XCTestCase {
 
     func test_launchApp_emptyBundleId_throws() async {
         do {
-            try await ActionExecutor.run(.launchApp(bundleId: ""))
+            _ = try await ActionExecutor.run(.launchApp(bundleId: ""))
             XCTFail("expected throw")
         } catch let err as ActionExecutorError {
             if case .invalidInput = err {} else { XCTFail("wrong error \(err)") }
@@ -28,7 +28,7 @@ final class StreamDeckExecutorTests: XCTestCase {
 
     func test_launchApp_unknownBundleId_throws() async {
         do {
-            try await ActionExecutor.run(.launchApp(bundleId: "com.nonexistent.app.xyz123"))
+            _ = try await ActionExecutor.run(.launchApp(bundleId: "com.nonexistent.app.xyz123"))
             XCTFail("expected throw")
         } catch let err as ActionExecutorError {
             if case .appNotFound = err {} else { XCTFail("wrong error \(err)") }
@@ -39,7 +39,7 @@ final class StreamDeckExecutorTests: XCTestCase {
 
     func test_openURL_invalidString_throws() async {
         do {
-            try await ActionExecutor.run(.openURL(url: ""))
+            _ = try await ActionExecutor.run(.openURL(url: ""))
             XCTFail("expected throw")
         } catch let err as ActionExecutorError {
             if case .invalidInput = err {} else { XCTFail("wrong error \(err)") }

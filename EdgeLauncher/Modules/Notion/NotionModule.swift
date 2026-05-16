@@ -5,6 +5,7 @@ struct NotionModule: EdgeModule {
     let title = "Notion"
     let iconName = "doc.text.fill"
     let supportsFullscreen = true
+    let preservesInactiveRendering = true
 
     var view: some View { NotionView() }
 }

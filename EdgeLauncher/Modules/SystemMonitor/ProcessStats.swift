@@ -31,7 +31,8 @@ final class ProcessStats: ObservableObject {
     func start() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refresh() }
+            guard let self else { return }
+            Task { @MainActor in self.refresh() }
         }
     }
 

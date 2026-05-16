@@ -31,8 +31,8 @@ enum ShellRunner {
                 timer.cancel()
                 let out = (try? outPipe.fileHandleForReading.readToEnd()) ?? Data()
                 let err = (try? errPipe.fileHandleForReading.readToEnd()) ?? Data()
-                let outString = String(data: out ?? Data(), encoding: .utf8) ?? ""
-                let errString = String(data: err ?? Data(), encoding: .utf8) ?? ""
+                let outString = String(data: out, encoding: .utf8) ?? ""
+                let errString = String(data: err, encoding: .utf8) ?? ""
                 let combined = [outString, errString].filter { !$0.isEmpty }.joined(separator: "\n---\n")
                 if proc.terminationStatus != 0 && combined.isEmpty {
                     continuation.resume(throwing: ActionExecutorError.shellFailed("Exit code \(proc.terminationStatus)"))

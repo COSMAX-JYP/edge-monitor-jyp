@@ -19,11 +19,15 @@ final class Phase2ModuleMetadataTests: XCTestCase {
     }
 
     func test_messenger_module() {
-        let m = MessengerModule()
+        let config = MessengerInstanceConfig.allInstances[0]
+        UserDefaults.standard.removeObject(forKey: config.titleKey)
+        UserDefaults.standard.removeObject(forKey: config.iconKey)
+        let m = MessengerModule(config: config)
         XCTAssertEqual(m.id, "messenger")
         XCTAssertEqual(m.title, "Discord")
         XCTAssertEqual(m.iconName, "bubble.left.and.bubble.right.fill")
         XCTAssertTrue(m.supportsFullscreen)
+        XCTAssertTrue(m.preservesInactiveRendering)
     }
 
     func test_launcher_module() {

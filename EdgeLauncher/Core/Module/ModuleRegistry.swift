@@ -4,6 +4,7 @@ import SwiftUI
 struct AnyEdgeModule: Identifiable {
     let id: String
     let supportsFullscreen: Bool
+    let preservesInactiveRendering: Bool
     let viewBuilder: () -> AnyView
     private let titleProvider: () -> String
     private let iconProvider: () -> String
@@ -25,6 +26,7 @@ struct AnyEdgeModule: Identifiable {
         self.iconProvider = { module.iconName }
         self.iconCustomizationProvider = { module.iconCustomization }
         self.supportsFullscreen = module.supportsFullscreen
+        self.preservesInactiveRendering = module.preservesInactiveRendering
         self.viewBuilder = { AnyView(module.view) }
         self.becameActive = { module.didBecomeActive() }
         self.resigned = { module.didResignActive() }

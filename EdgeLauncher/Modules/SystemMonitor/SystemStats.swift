@@ -23,7 +23,8 @@ final class SystemStats: ObservableObject {
     func start() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+            guard let self else { return }
+            Task { @MainActor in self.tick() }
         }
     }
 

@@ -89,8 +89,7 @@ struct RootView: View {
         }
     }
 
-    // 모든 등록 모듈을 항상 렌더링하고 활성 모듈만 가시화한다.
-    // WKWebView 등 미디어 뷰는 비활성 상태에서도 살아있어 백그라운드 재생을 유지.
+    // WebView처럼 세션/재생 유지가 필요한 모듈만 비활성 상태에서도 살려둔다.
     @ViewBuilder
     private var content: some View {
         if registry.modules.isEmpty {
@@ -98,11 +97,13 @@ struct RootView: View {
         } else {
             ZStack {
                 ForEach(registry.modules) { module in
-                    if activated.contains(module.id) {
+                    let isActive = router.activeID == module.id
+                    let shouldRender = isActive || (module.preservesInactiveRendering && activated.contains(module.id))
+                    if shouldRender {
                         module.viewBuilder()
-                            .opacity(router.activeID == module.id ? 1 : 0)
-                            .allowsHitTesting(router.activeID == module.id)
-                            .accessibilityHidden(router.activeID != module.id)
+                            .opacity(isActive ? 1 : 0)
+                            .allowsHitTesting(isActive)
+                            .accessibilityHidden(!isActive)
                     }
                 }
             }

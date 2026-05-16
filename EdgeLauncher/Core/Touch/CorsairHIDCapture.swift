@@ -198,8 +198,8 @@ final class CorsairHIDCapture {
         let line = "[hid] \(message)\n"
         FileHandle.standardError.write(Data(line.utf8))
         if let h = logHandle {
-            try? h.seekToEnd()
-            try? h.write(contentsOf: Data(line.utf8))
+            _ = try? h.seekToEnd()
+            _ = try? h.write(contentsOf: Data(line.utf8))
         }
     }
 

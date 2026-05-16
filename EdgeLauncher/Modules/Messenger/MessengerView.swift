@@ -103,7 +103,6 @@ struct DiscordWebView: NSViewRepresentable {
         } else {
             cfg.websiteDataStore = .default()
         }
-        cfg.processPool = SharedWebProcessPool.shared
         cfg.mediaTypesRequiringUserActionForPlayback = []
         cfg.allowsAirPlayForMediaPlayback = true
         cfg.preferences.isElementFullscreenEnabled = true
@@ -163,7 +162,7 @@ struct DiscordWebView: NSViewRepresentable {
                 Task { @MainActor in
                     let title = webView.title ?? ""
                     let titleCount = Self.parseUnread(title: title)
-                    webView.evaluateJavaScript("""
+                    let result = try? await webView.evaluateJavaScript("""
                     (function() {
                       try {
                         const sels = [
@@ -183,13 +182,12 @@ struct DiscordWebView: NSViewRepresentable {
                         return total;
                       } catch (e) { return 0; }
                     })();
-                    """) { result, _ in
-                        let domCount = (result as? Int) ?? 0
-                        let finalCount = max(titleCount, domCount)
-                        BadgeStore.shared.set(id, count: finalCount)
-                        BadgeStore.shared.setDebug(id, "title=\"\(title.prefix(40))\" t=\(titleCount) dom=\(domCount)")
-                        AppLog.web.debug("Discord(\(id)) t=\(titleCount) dom=\(domCount) title=\(title)")
-                    }
+                    """)
+                    let domCount = (result as? Int) ?? 0
+                    let finalCount = max(titleCount, domCount)
+                    BadgeStore.shared.set(id, count: finalCount)
+                    BadgeStore.shared.setDebug(id, "title=\"\(title.prefix(40))\" t=\(titleCount) dom=\(domCount)")
+                    AppLog.web.debug("Discord(\(id)) t=\(titleCount) dom=\(domCount) title=\(title)")
                 }
             }
         }

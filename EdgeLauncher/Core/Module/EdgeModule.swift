@@ -6,6 +6,7 @@ protocol EdgeModule {
     var title: String { get }
     var iconName: String { get }
     var supportsFullscreen: Bool { get }
+    var preservesInactiveRendering: Bool { get }
     @ViewBuilder var view: Body { get }
 
     var commandHandler: ModuleCommandHandler? { get }
@@ -18,6 +19,7 @@ protocol EdgeModule {
 }
 
 extension EdgeModule {
+    var preservesInactiveRendering: Bool { false }
     var commandHandler: ModuleCommandHandler? { nil }
     var requiredPermissions: [PermissionKind] { [] }
     var iconCustomization: IconCustomization? { nil }

@@ -1,7 +1,7 @@
 import Foundation
 
 protocol Versioned {
-    static var schemaVersion: Int { get }
+    nonisolated static var schemaVersion: Int { get }
 }
 
 struct VersionedEnvelope<T: Codable & Versioned>: Codable {

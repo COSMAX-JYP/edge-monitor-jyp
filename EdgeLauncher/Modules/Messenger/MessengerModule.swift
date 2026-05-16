@@ -51,6 +51,7 @@ struct MessengerModule: EdgeModule {
         return stored.isEmpty ? "bubble.left.and.bubble.right.fill" : stored
     }
     let supportsFullscreen = true
+    let preservesInactiveRendering = true
 
     var iconCustomization: IconCustomization? {
         let defaults = UserDefaults.standard
