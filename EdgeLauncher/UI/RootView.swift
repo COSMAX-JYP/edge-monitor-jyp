@@ -7,6 +7,7 @@ struct RootView: View {
     @Environment(\.openSettings) private var openSettings
     @AppStorage("app.themeMode") private var themeMode = "dark"
     @State private var activated: Set<String> = []
+    @State private var editingIconModuleID: String?
 
     var body: some View {
         ZStack {
@@ -36,6 +37,18 @@ struct RootView: View {
         .preferredColorScheme(isLightTheme ? .light : .dark)
         .animation(.easeInOut(duration: 0.18), value: router.activeID)
         .animation(.easeInOut(duration: 0.20), value: themeMode)
+        .onReceive(NotificationCenter.default.publisher(for: .moduleIconEditorRequested)) { note in
+            editingIconModuleID = note.userInfo?["moduleID"] as? String
+        }
+        .dismissiblePopup(item: iconEditorBinding) { module in
+            ModuleIconEditorSheet(
+                moduleID: module.id,
+                title: module.title,
+                systemIconName: module.iconName,
+                initialCustomization: registry.iconCustomization(for: module.id),
+                onClose: { editingIconModuleID = nil }
+            )
+        }
     }
 
     private var statusStrip: some View {
@@ -135,6 +148,18 @@ struct RootView: View {
         themeMode == "light"
     }
 
+    private var iconEditorBinding: Binding<AnyEdgeModule?> {
+        Binding(
+            get: {
+                guard let id = editingIconModuleID else { return nil }
+                return registry.module(id: id)
+            },
+            set: { module in
+                editingIconModuleID = module?.id
+            }
+        )
+    }
+
     private func toggleTheme() {
         themeMode = isLightTheme ? "dark" : "light"
     }
@@ -142,4 +167,8 @@ struct RootView: View {
     static var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
     }
+}
+
+extension Notification.Name {
+    static let moduleIconEditorRequested = Notification.Name("edge.module.iconEditorRequested")
 }

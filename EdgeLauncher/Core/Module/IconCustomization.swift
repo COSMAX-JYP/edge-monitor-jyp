@@ -85,7 +85,7 @@ enum ModuleIconCustomizationStore {
     }
 
     static func migrateLegacyDiscordIcons(defaults: UserDefaults = .standard) {
-        for id in ["messenger", "messenger-2", "messenger-3"] where defaults.string(forKey: imageKey(id)) == nil {
+        for id in ["messenger", "messenger-2", "messenger-3", "messenger-4"] where defaults.string(forKey: imageKey(id)) == nil {
             let legacyImageKey = "app.\(id).iconImage"
             let path = (defaults.string(forKey: legacyImageKey) ?? "")
                 .trimmingCharacters(in: .whitespacesAndNewlines)

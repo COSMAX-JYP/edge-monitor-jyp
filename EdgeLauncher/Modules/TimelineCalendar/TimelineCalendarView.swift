@@ -35,7 +35,7 @@ struct TimelineCalendarView: View {
         .task {
             await viewModel.onAppear()
         }
-        .sheet(item: $viewModel.editorDraft) { draft in
+        .dismissiblePopup(item: $viewModel.editorDraft, onDismiss: viewModel.cancelEditing) { draft in
             EventEditorSheet(
                 initial: draft,
                 calendars: viewModel.calendars,

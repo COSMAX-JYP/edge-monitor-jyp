@@ -10,6 +10,10 @@ struct MessengerView: View {
         ZStack(alignment: .topTrailing) {
             DiscordWebView(config: config)
                 .ignoresSafeArea()
+            if config.id == "messenger-4" {
+                JYPBotPulseBorder()
+                    .allowsHitTesting(false)
+            }
             if let debugText = badges.debug[config.id] {
                 Text(debugText)
                     .font(.appCaptionMono)
@@ -20,6 +24,37 @@ struct MessengerView: View {
                     .padding(12)
             }
         }
+    }
+}
+
+private struct JYPBotPulseBorder: View {
+    @State private var isPulsing = false
+
+    var body: some View {
+        ZStack {
+            pulseRing(lineWidth: 18, opacity: 0.16)
+                .blur(radius: 8)
+                .padding(3)
+
+            pulseRing(lineWidth: 12, opacity: 0.34)
+                .blur(radius: 4)
+                .padding(5)
+
+            pulseRing(lineWidth: 5.5, opacity: 0.98)
+                .shadow(color: .red.opacity(0.54), radius: 18)
+                .padding(7)
+
+            pulseRing(lineWidth: 1.6, opacity: 1.0)
+                .padding(9)
+        }
+            .opacity(isPulsing ? 1.0 : 0.03)
+            .animation(.easeInOut(duration: 1.15).repeatForever(autoreverses: true), value: isPulsing)
+            .onAppear { isPulsing = true }
+    }
+
+    private func pulseRing(lineWidth: CGFloat, opacity: Double) -> some View {
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .strokeBorder(Color(red: 1.0, green: 0.12, blue: 0.08).opacity(opacity), lineWidth: lineWidth)
     }
 }
 

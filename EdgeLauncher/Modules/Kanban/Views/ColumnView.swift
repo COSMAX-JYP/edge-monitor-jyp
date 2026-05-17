@@ -68,7 +68,7 @@ struct ColumnView: View {
             }
         }
         .frame(width: width, height: height)
-        .sheet(isPresented: $isEditingColor) {
+        .dismissiblePopup(isPresented: $isEditingColor) {
             KanbanColorEditorSheet(
                 title: "\(column.name) 색상",
                 initialColorHex: column.colorHex,

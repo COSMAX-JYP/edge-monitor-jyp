@@ -21,7 +21,7 @@ struct KanbanBoardView: View {
             }
         }
         .background(style.boardBackground)
-        .sheet(item: $viewModel.editingCard) { card in
+        .dismissiblePopup(item: $viewModel.editingCard, onDismiss: viewModel.cancelEditing) { card in
             CardEditorSheet(
                 initial: card,
                 labels: viewModel.activeBoard?.labels ?? [],
@@ -30,7 +30,7 @@ struct KanbanBoardView: View {
                 onCancel: viewModel.cancelEditing
             )
         }
-        .sheet(item: $viewModel.editingBoard) { board in
+        .dismissiblePopup(item: $viewModel.editingBoard, onDismiss: viewModel.cancelBoardEditing) { board in
             BoardEditorSheet(
                 initial: board,
                 isNew: viewModel.isCreatingBoard,
@@ -38,7 +38,7 @@ struct KanbanBoardView: View {
                 onCancel: viewModel.cancelBoardEditing
             )
         }
-        .sheet(isPresented: $viewModel.isManagingLabels) {
+        .dismissiblePopup(isPresented: $viewModel.isManagingLabels, onDismiss: viewModel.closeLabelManager) {
             LabelManagerSheet(
                 labels: viewModel.activeBoard?.labels ?? [],
                 onAdd: viewModel.addLabel,

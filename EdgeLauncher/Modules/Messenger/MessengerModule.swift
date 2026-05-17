@@ -29,6 +29,11 @@ struct MessengerInstanceConfig {
             defaultTitle: "Discord 3",
             storageUUID: UUID(uuidString: "DC0003CD-D15C-4A11-B0A1-DC0003000003")!
         ),
+        MessengerInstanceConfig(
+            id: "messenger-4",
+            defaultTitle: "JYP봇",
+            storageUUID: UUID(uuidString: "DC0004CD-D15C-4A11-B0A1-DC0004000004")!
+        ),
     ]
 
     static func find(by id: String) -> MessengerInstanceConfig? {

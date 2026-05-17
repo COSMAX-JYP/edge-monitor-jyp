@@ -32,7 +32,7 @@ struct StreamDeckView: View {
                 .background(Color.red.opacity(0.1))
             }
         }
-        .sheet(item: $viewModel.editingButton) { btn in
+        .dismissiblePopup(item: $viewModel.editingButton, onDismiss: viewModel.cancelEditing) { btn in
             ActionEditorView(
                 initial: btn,
                 onSave: viewModel.saveButton,
@@ -42,14 +42,14 @@ struct StreamDeckView: View {
                 }
             )
         }
-        .sheet(item: $viewModel.editingPage) { page in
+        .dismissiblePopup(item: $viewModel.editingPage, onDismiss: viewModel.cancelPageEdit) { page in
             PageEditorSheet(
                 initial: page,
                 onSave: viewModel.savePageEdit,
                 onCancel: viewModel.cancelPageEdit
             )
         }
-        .sheet(item: $viewModel.lastOutput) { output in
+        .dismissiblePopup(item: $viewModel.lastOutput, onDismiss: viewModel.dismissOutput) { output in
             ActionOutputSheet(output: output, onDismiss: viewModel.dismissOutput)
         }
         .alert(item: $viewModel.pendingConfirm) { btn in
@@ -66,7 +66,7 @@ struct StreamDeckView: View {
         } message: {
             Text(viewModel.pendingDeletePage?.name ?? "")
         }
-        .sheet(isPresented: $viewModel.isShowingStats) {
+        .dismissiblePopup(isPresented: $viewModel.isShowingStats, onDismiss: viewModel.closeStats) {
             ActionStatsSheet(viewModel: viewModel, onDismiss: viewModel.closeStats)
         }
     }

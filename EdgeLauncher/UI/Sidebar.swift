@@ -10,7 +10,6 @@ struct Sidebar: View {
     @State private var draggingID: String?
     @State private var isEditing: Bool = false
     @State private var selectedSlotID: String?
-    @State private var editingIconModuleID: String?
 
     private let columns = [
         GridItem(.fixed(EdgeTheme.tabTileWidth), spacing: 4),
@@ -45,15 +44,6 @@ struct Sidebar: View {
             Rectangle()
                 .fill(EdgeTheme.stroke(isLight: isLightTheme))
                 .frame(width: 1)
-        }
-        .sheet(item: iconEditorBinding) { module in
-            ModuleIconEditorSheet(
-                moduleID: module.id,
-                title: module.title,
-                systemIconName: module.iconName,
-                initialCustomization: registry.iconCustomization(for: module.id),
-                onClose: { editingIconModuleID = nil }
-            )
         }
     }
 
@@ -196,18 +186,6 @@ struct Sidebar: View {
         themeMode == "light"
     }
 
-    private var iconEditorBinding: Binding<AnyEdgeModule?> {
-        Binding(
-            get: {
-                guard let id = editingIconModuleID else { return nil }
-                return registry.module(id: id)
-            },
-            set: { module in
-                editingIconModuleID = module?.id
-            }
-        )
-    }
-
     private func handleEditTap(slotID: String) {
         if let selected = selectedSlotID {
             if selected == slotID {
@@ -227,7 +205,11 @@ struct Sidebar: View {
     private func moduleMenu(for id: String) -> some View {
         if registry.modules.contains(where: { $0.id == id }) {
             Button {
-                editingIconModuleID = id
+                NotificationCenter.default.post(
+                    name: .moduleIconEditorRequested,
+                    object: nil,
+                    userInfo: ["moduleID": id]
+                )
             } label: {
                 Label("아이콘 변경", systemImage: "photo")
             }

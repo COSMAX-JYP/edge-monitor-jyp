@@ -23,16 +23,16 @@ struct BoardEditorSheet: View {
             HStack {
                 Text(isNew ? "새 보드" : "보드 편집").font(.appTitle)
                 Spacer()
-                Button("취소", action: onCancel).font(.appBody)
+                Button("취소", action: onCancel)
+                    .kanbanDialogSecondaryButton()
                 Button(isNew ? "추가" : "저장") {
                     var board = initial
                     board.name = name.trimmingCharacters(in: .whitespaces)
                     board.colorHex = colorHex
                     onSave(board)
                 }
-                .font(.appBodyBold)
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.return, modifiers: .command)
+                .kanbanDialogPrimaryButton()
+                .keyboardShortcut(.return, modifiers: .option)
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             VStack(alignment: .leading, spacing: 6) {
@@ -178,13 +178,13 @@ struct KanbanColorEditorSheet: View {
             HStack {
                 Text(title).font(.appTitle)
                 Spacer()
-                Button("취소", action: onCancel).font(.appBody)
+                Button("취소", action: onCancel)
+                    .kanbanDialogSecondaryButton()
                 Button("저장") {
                     onSave(usesDefault ? nil : colorHex)
                 }
-                .font(.appBodyBold)
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.return, modifiers: .command)
+                .kanbanDialogPrimaryButton()
+                .keyboardShortcut(.return, modifiers: .option)
             }
 
             HStack(spacing: 12) {

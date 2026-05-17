@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct CardEditorSheet: View {
@@ -36,16 +37,13 @@ struct CardEditorSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            HStack {
+            HStack(spacing: 16) {
                 Text(isNew ? "새 카드" : "카드 편집")
                     .font(.appTitle)
                 Spacer()
-                Button("취소") { onCancel() }
-                    .font(.appBody)
                 Button(isNew ? "추가" : "저장") { saveAndDismiss() }
-                    .font(.appBodyBold)
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut(.return, modifiers: .command)
+                    .kanbanDialogPrimaryButton()
+                    .keyboardShortcut(.return, modifiers: .option)
                     .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             VStack(alignment: .leading, spacing: 6) {
@@ -109,10 +107,20 @@ struct CardEditorSheet: View {
             Spacer()
         }
         .padding(24)
-        .appSheetFrame(width: 0.5...0.8, height: 0.5...0.85)
+        .background(
+            CardEditorShortcutMonitor(isEnabled: canSave) {
+                saveAndDismiss()
+            }
+        )
+        .appSheetFrame(width: 0.35...0.56, height: 0.5...0.85)
+    }
+
+    private var canSave: Bool {
+        !title.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     private func saveAndDismiss() {
+        guard canSave else { return }
         var card = initial
         card.title = title.trimmingCharacters(in: .whitespaces)
         card.notes = notes
@@ -121,6 +129,57 @@ struct CardEditorSheet: View {
         card.assignee = assignee
         card.updatedAt = Date()
         onSave(card)
+    }
+}
+
+private struct CardEditorShortcutMonitor: NSViewRepresentable {
+    let isEnabled: Bool
+    let onOptionReturn: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        context.coordinator.installIfNeeded()
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        context.coordinator.isEnabled = isEnabled
+        context.coordinator.onOptionReturn = onOptionReturn
+        context.coordinator.installIfNeeded()
+    }
+
+    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
+        coordinator.remove()
+    }
+
+    final class Coordinator {
+        var isEnabled: Bool = false
+        var onOptionReturn: () -> Void = {}
+        private var monitor: Any?
+
+        func installIfNeeded() {
+            guard monitor == nil else { return }
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+                guard let self else { return event }
+                let isReturn = event.keyCode == 36 || event.keyCode == 76
+                guard isEnabled, isReturn, event.modifierFlags.contains(.option) else {
+                    return event
+                }
+                onOptionReturn()
+                return nil
+            }
+        }
+
+        func remove() {
+            if let monitor {
+                NSEvent.removeMonitor(monitor)
+            }
+            monitor = nil
+        }
     }
 }
 
