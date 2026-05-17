@@ -78,5 +78,12 @@ struct MessengerModule: EdgeModule {
             object: nil,
             userInfo: ["instanceID": config.id]
         )
+        // 하린봇 unread 카운트도 0 으로 리셋 (사용자가 읽기 시작했으니).
+        let rawURL = UserDefaults.standard.string(forKey: config.urlKey) ?? ""
+        let cid = DiscordWebView.Coordinator.extractChannelID(from: rawURL)
+        if !cid.isEmpty {
+            DiscordWebView.Coordinator.resetEdgeUnread(forChannelID: cid)
+            BadgeStore.shared.set(config.id, count: 0)
+        }
     }
 }

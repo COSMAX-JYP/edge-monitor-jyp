@@ -192,39 +192,22 @@ struct DiscordWebView: NSViewRepresentable {
                 }
                 webView.load(URLRequest(url: targetURL))
             }
-            timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak webView] _ in
-                guard let webView else { return }
+            timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
                 Task { @MainActor in
-                    let title = webView.title ?? ""
-                    let titleCount = Self.parseUnread(title: title)
-                    let result = try? await webView.evaluateJavaScript("""
-                    (function() {
-                      try {
-                        const sels = [
-                          '[class*=numberBadge]',
-                          '[class*="numberBadge"]',
-                          '[class*=baseShapeRound]'
-                        ];
-                        let total = 0;
-                        for (const s of sels) {
-                          const nodes = document.querySelectorAll(s);
-                          nodes.forEach(n => {
-                            const v = parseInt((n.textContent || '').trim(), 10);
-                            if (!isNaN(v)) total += v;
-                          });
-                          if (total > 0) break;
-                        }
-                        return total;
-                      } catch (e) { return 0; }
-                    })();
-                    """)
-                    let domCount = (result as? Int) ?? 0
-                    let finalCount = max(titleCount, domCount)
-                    BadgeStore.shared.set(id, count: finalCount)
-                    BadgeStore.shared.setDebug(id, "title=\"\(title.prefix(40))\" t=\(titleCount) dom=\(domCount)")
-                    AppLog.web.debug("Discord(\(id)) t=\(titleCount) dom=\(domCount) title=\(title)")
+                    guard let cfg = MessengerInstanceConfig.find(by: id) else { return }
+                    let rawURL = UserDefaults.standard.string(forKey: cfg.urlKey) ?? ""
+                    let channelID = Self.extractChannelID(from: rawURL)
+                    guard !channelID.isEmpty else {
+                        BadgeStore.shared.set(id, count: 0)
+                        BadgeStore.shared.setDebug(id, "no-cid")
+                        return
+                    }
+                    let count = Self.readEdgeUnread(forChannelID: channelID)
+                    BadgeStore.shared.set(id, count: count)
+                    BadgeStore.shared.setDebug(id, "cid=\(channelID) n=\(count)")
                 }
             }
+
         }
 
         func detach() {
@@ -251,6 +234,51 @@ struct DiscordWebView: NSViewRepresentable {
                   openIdx < closeIdx else { return 0 }
             let inner = title[title.index(after: openIdx)..<closeIdx]
             return Int(inner) ?? 0
+        }
+
+        /// 시작 URL 입력값에서 Discord 채널 ID 만 추출.
+        /// - 전체 URL (`https://discord.com/channels/<guild>/<channel>`) → `<channel>`
+        /// - `channels/<guild>/<channel>` → `<channel>`
+        /// - `<guild>/<channel>` → `<channel>`
+        /// - 숫자만 (`<channelID>`) → 그대로
+        /// - 그 외 → 빈 문자열
+        static func extractChannelID(from input: String) -> String {
+            let raw = input.trimmingCharacters(in: .whitespacesAndNewlines)
+            if raw.isEmpty { return "" }
+
+            if let url = URL(string: raw), let host = url.host, host.contains("discord.com") {
+                let comps = url.path.split(separator: "/").map(String.init)
+                if comps.count >= 3, comps[0].lowercased() == "channels" {
+                    return comps[2]
+                }
+            }
+
+            let segs = raw.split(separator: "/").map(String.init)
+            if segs.count >= 3, segs[0].lowercased() == "channels" { return segs[2] }
+            if segs.count == 2 { return segs[1] }
+            if segs.count == 1, segs[0].allSatisfy(\.isNumber) { return segs[0] }
+
+            return ""
+        }
+
+        /// 하린봇 EdgeTracker 가 publish 한 `~/.edgelauncher/unread.json` 에서
+        /// 해당 채널의 unread count 를 읽는다. (파일/entry 없으면 0)
+        static func readEdgeUnread(forChannelID channelID: String) -> Int {
+            let path = NSString(string: "~/.edgelauncher/unread.json").expandingTildeInPath
+            guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let entry = json[channelID] as? [String: Any],
+                  let count = entry["count"] as? Int else { return 0 }
+            return max(count, 0)
+        }
+
+        /// 하린봇 reset endpoint 호출로 해당 채널 unread 카운트를 0 으로 초기화.
+        static func resetEdgeUnread(forChannelID channelID: String) {
+            guard !channelID.isEmpty,
+                  let url = URL(string: "http://127.0.0.1:8124/reset?cid=\(channelID)") else { return }
+            var req = URLRequest(url: url)
+            req.timeoutInterval = 1.0
+            URLSession.shared.dataTask(with: req).resume()
         }
     }
 }
