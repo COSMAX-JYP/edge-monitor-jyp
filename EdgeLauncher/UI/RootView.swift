@@ -66,6 +66,10 @@ struct RootView: View {
 
             Spacer()
 
+            SystemVolumeSlider()
+
+            Spacer()
+
             Text("Designed by jyp")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
