@@ -356,7 +356,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.3.15;
+				MARKETING_VERSION = 0.3.21;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jongyoungpark.edgelauncher.EdgeLauncher;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -405,7 +405,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.3.15;
+				MARKETING_VERSION = 0.3.21;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jongyoungpark.edgelauncher.EdgeLauncher;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -426,7 +426,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6VTC4DM869;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.3.15;
+				MARKETING_VERSION = 0.3.21;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jongyoungpark.edgelauncher.EdgeLauncherTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -446,7 +446,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6VTC4DM869;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.3.15;
+				MARKETING_VERSION = 0.3.21;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jongyoungpark.edgelauncher.EdgeLauncherTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;

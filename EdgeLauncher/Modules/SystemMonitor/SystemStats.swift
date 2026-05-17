@@ -1,19 +1,28 @@
 import Combine
 import Darwin
 import Foundation
+import IOKit
 
 @MainActor
 final class SystemStats: ObservableObject {
     @Published var cpuHistory: [Double] = Array(repeating: 0, count: 120)
     @Published var memHistory: [Double] = Array(repeating: 0, count: 120)
+    @Published var diskHistory: [Double] = Array(repeating: 0, count: 120)
     @Published var cpuCurrent: Double = 0
     @Published var memCurrent: Double = 0
+    @Published var diskCurrentMBps: Double = 0
 
     private var prevTicks: (user: UInt32, system: UInt32, idle: UInt32, nice: UInt32) = (0, 0, 0, 0)
+    private var prevDiskBytes: (read: UInt64, write: UInt64) = (0, 0)
+    private var prevDiskSampleTime: Date = Date()
     private var timer: Timer?
+
+    private static let diskScaleMBps: Double = 500  // 500 MB/s = sparkline 100%
 
     init() {
         _ = sampleCPU() // 초기 baseline. Timer는 외부 start() 호출 시 시작.
+        prevDiskBytes = Self.readDiskBytes()
+        prevDiskSampleTime = Date()
     }
 
     deinit {
@@ -36,12 +45,56 @@ final class SystemStats: ObservableObject {
     private func tick() {
         let cpu = sampleCPU()
         let mem = sampleMemory()
+        let disk = sampleDisk()
         cpuCurrent = cpu
         memCurrent = mem
+        diskCurrentMBps = disk
         cpuHistory.removeFirst()
         cpuHistory.append(cpu)
         memHistory.removeFirst()
         memHistory.append(mem)
+        diskHistory.removeFirst()
+        diskHistory.append(min(disk / Self.diskScaleMBps * 100.0, 100.0))
+    }
+
+    private func sampleDisk() -> Double {
+        let current = Self.readDiskBytes()
+        let now = Date()
+        let elapsed = now.timeIntervalSince(prevDiskSampleTime)
+        prevDiskSampleTime = now
+
+        let dRead = current.read &- prevDiskBytes.read
+        let dWrite = current.write &- prevDiskBytes.write
+        prevDiskBytes = current
+
+        guard elapsed > 0 else { return 0 }
+        let bytesPerSec = Double(dRead + dWrite) / elapsed
+        return bytesPerSec / (1024 * 1024) // MB/s
+    }
+
+    nonisolated private static func readDiskBytes() -> (read: UInt64, write: UInt64) {
+        var iter: io_iterator_t = 0
+        let matching = IOServiceMatching("IOBlockStorageDriver")
+        guard IOServiceGetMatchingServices(0, matching, &iter) == KERN_SUCCESS else { return (0, 0) }
+        defer { IOObjectRelease(iter) }
+
+        var totalRead: UInt64 = 0
+        var totalWrite: UInt64 = 0
+
+        while true {
+            let svc = IOIteratorNext(iter)
+            if svc == 0 { break }
+            defer { IOObjectRelease(svc) }
+
+            var propsRef: Unmanaged<CFMutableDictionary>?
+            guard IORegistryEntryCreateCFProperties(svc, &propsRef, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+                  let cfDict = propsRef?.takeRetainedValue() else { continue }
+            let dict = cfDict as NSDictionary
+            guard let stats = dict["Statistics"] as? [String: Any] else { continue }
+            if let read = stats["Bytes (Read)"] as? UInt64 { totalRead += read }
+            if let write = stats["Bytes (Write)"] as? UInt64 { totalWrite += write }
+        }
+        return (totalRead, totalWrite)
     }
 
     private func sampleCPU() -> Double {

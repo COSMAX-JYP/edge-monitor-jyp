@@ -11,13 +11,13 @@ struct SystemMonitorView: View {
             topGauges
             Divider()
             HStack(spacing: 0) {
-                ProcessColumn(title: "CPU", icon: "cpu", accent: .blue, rows: procs.cpuTop, onKill: kill)
+                ProcessColumn(title: "CPU", icon: "cpu", accent: .blue, rows: procs.cpuTop, valueDescription: "현재 사용률", onKill: kill)
                 Divider()
-                ProcessColumn(title: "Memory", icon: "memorychip", accent: .purple, rows: procs.memTop, onKill: kill)
+                ProcessColumn(title: "Memory", icon: "memorychip", accent: .purple, rows: procs.memTop, valueDescription: "물리 메모리 (RSS)", onKill: kill)
                 Divider()
                 ProcessColumn(title: "Energy", icon: "bolt.fill", accent: .orange, rows: procs.energyTop, valueDescription: "누적 CPU 시간", onKill: kill)
                 Divider()
-                ProcessColumn(title: "Disk", icon: "internaldrive", accent: .teal, rows: procs.diskTop, valueDescription: "활성 스레드 수", onKill: kill)
+                ProcessColumn(title: "Disk", icon: "internaldrive", accent: .teal, rows: procs.diskTop, valueDescription: "누적 페이지인 (디스크→RAM)", onKill: kill)
             }
         }
         .background(Color(NSColor.windowBackgroundColor))
@@ -39,20 +39,22 @@ struct SystemMonitorView: View {
 
     private var topGauges: some View {
         HStack(spacing: 0) {
-            gauge(title: "CPU", value: stats.cpuCurrent, color: .blue, history: stats.cpuHistory)
+            gauge(title: "CPU", value: stats.cpuCurrent, color: .blue, history: stats.cpuHistory, format: "%.1f%%")
             Divider()
-            gauge(title: "MEM", value: stats.memCurrent, color: .purple, history: stats.memHistory)
+            gauge(title: "MEM", value: stats.memCurrent, color: .purple, history: stats.memHistory, format: "%.1f%%")
+            Divider()
+            gauge(title: "DISK", value: stats.diskCurrentMBps, color: .teal, history: stats.diskHistory, format: "%.1f MB/s")
         }
         .frame(height: 180)
     }
 
-    private func gauge(title: String, value: Double, color: Color, history: [Double]) -> some View {
+    private func gauge(title: String, value: Double, color: Color, history: [Double], format: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .lastTextBaseline, spacing: 10) {
                 Text(title)
                     .font(.appBodyMonoBold)
                     .foregroundStyle(.secondary)
-                Text(String(format: "%.1f%%", value))
+                Text(String(format: format, value))
                     .font(.system(size: 42, weight: .light, design: .monospaced))
                     .contentTransition(.numericText(value: value))
                 Spacer()

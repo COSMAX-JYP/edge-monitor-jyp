@@ -14,6 +14,7 @@ struct CardEditorSheet: View {
     @State private var hasDueDate: Bool
     @State private var dueDate: Date
     @State private var assignee: String
+    @FocusState private var titleFocused: Bool
 
     init(
         initial: KanbanCard,
@@ -51,6 +52,7 @@ struct CardEditorSheet: View {
                 TextField("필수", text: $title)
                     .font(.appBody)
                     .textFieldStyle(.roundedBorder)
+                    .focused($titleFocused)
             }
             VStack(alignment: .leading, spacing: 6) {
                 Text("노트").font(.appFootnote).foregroundStyle(.secondary)
@@ -113,6 +115,13 @@ struct CardEditorSheet: View {
             }
         )
         .appSheetFrame(width: 0.35...0.56, height: 0.5...0.85)
+        .onAppear {
+            if isNew {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    titleFocused = true
+                }
+            }
+        }
     }
 
     private var canSave: Bool {

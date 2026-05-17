@@ -116,22 +116,45 @@ final class ProcessStats: ObservableObject {
     }
 
     nonisolated private static func parseDisk() -> [ProcessRow] {
-        // macOS ps 가 디스크 I/O 컬럼을 노출하지 않는다.
-        // 대안: 가장 많은 스레드를 가진 프로세스 (대용량 작업의 간접 지표) 또는 placeholder.
-        let raw = run("ps -axo pid=,nlwp=,comm= | sort -k2 -nr | head -10")
-        let rows = lines(raw).compactMap { line -> ProcessRow? in
-            let parts = tokens(line, max: 3)
-            guard parts.count >= 3,
-                  let pid = Int(parts[0]),
-                  let threads = Int(parts[1]) else { return nil }
+        // macOS ps 는 per-process disk I/O 컬럼이 없고 nlwp 키워드도 없다.
+        // top 의 pageins (디스크→메모리 페이지 인입, 누적값) 가 유일한 per-process 디스크 지표.
+        let raw = run("top -l 1 -stats pid,command,pageins -n 10 -o pageins")
+        // top 출력은 헤더 8줄 + "PID COMMAND PAGEINS" 헤더 1줄 + 데이터.
+        // 마지막 "PID" 헤더 이후 줄들만 파싱.
+        let allLines = raw.split(separator: "\n").map(String.init)
+        guard let headerIdx = allLines.firstIndex(where: { $0.hasPrefix("PID") }) else { return [] }
+        let dataLines = allLines.suffix(from: allLines.index(after: headerIdx))
+        let parsed: [(Int, Int, String)] = dataLines.compactMap { line in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { return nil }
+            // pageins 는 마지막 숫자 토큰. command 는 공백 포함 가능 → 뒤에서 파싱.
+            let parts = trimmed.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
+            guard parts.count >= 3, let pid = Int(parts[0]) else { return nil }
+            // 마지막 토큰이 pageins.
+            guard let pageins = Int(parts.last ?? "") else { return nil }
+            let command = parts.dropFirst().dropLast().joined(separator: " ")
+            return (pid, pageins, command)
+        }
+        let maxValue = Double(parsed.first?.1 ?? 1)
+        return parsed.map { (pid, pageins, name) in
+            let pages = pageins
+            // 1 page = 16384 bytes on Apple Silicon, 4096 on Intel. 평균 16K 가정.
+            let bytes = Double(pages) * 16384.0
+            let displayValue: String
+            if bytes >= 1024 * 1024 * 1024 {
+                displayValue = String(format: "%.1f GB", bytes / (1024 * 1024 * 1024))
+            } else if bytes >= 1024 * 1024 {
+                displayValue = String(format: "%.0f MB", bytes / (1024 * 1024))
+            } else {
+                displayValue = String(format: "%.0f KB", bytes / 1024)
+            }
             return ProcessRow(
                 id: pid,
-                name: prettyName(parts[2]),
-                value: "\(threads) 스레드",
-                highlight: min(Double(threads), 100)
+                name: prettyName(name),
+                value: displayValue,
+                highlight: maxValue > 0 ? min(Double(pageins) / maxValue * 100, 100) : 0
             )
         }
-        return rows
     }
 
     // MARK: - helpers

@@ -5,6 +5,7 @@ struct SettingsView: View {
     @AppStorage("app.autoMoveOnLaunch") private var autoMoveOnLaunch = true
     @AppStorage("app.startInFullScreen") private var startInFullScreen = true
     @AppStorage("app.keepCursorOnEdgeForTouch") private var keepCursorOnEdgeForTouch = true
+    @AppStorage("youtubeMusic.zoom") private var youtubeMusicZoom: Double = 0.90
 
     var body: some View {
         TabView {
@@ -12,6 +13,17 @@ struct SettingsView: View {
                 Toggle("앱 실행 시 Xeneon Edge로 자동 이동", isOn: $autoMoveOnLaunch)
                 Toggle("Edge 이동 시 자동 풀스크린", isOn: $startInFullScreen)
                 Toggle("Edge 터치/클릭 시 커서를 Edge 화면으로 이동", isOn: $keepCursorOnEdgeForTouch)
+
+                Section("YouTube Music") {
+                    HStack {
+                        Text("페이지 확대")
+                        Slider(value: $youtubeMusicZoom, in: 0.5...2.0, step: 0.05)
+                        Text("\(Int(youtubeMusicZoom * 100))%")
+                            .monospacedDigit()
+                            .frame(width: 50, alignment: .trailing)
+                        Button("기본값") { youtubeMusicZoom = 0.90 }
+                    }
+                }
             }
             .font(.appBody)
             .padding(28)
