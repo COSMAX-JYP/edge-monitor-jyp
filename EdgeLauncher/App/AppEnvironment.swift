@@ -1,5 +1,7 @@
 import Combine
+import EventKit
 import Foundation
+import os
 
 @MainActor
 final class AppEnvironment: ObservableObject {
@@ -11,6 +13,8 @@ final class AppEnvironment: ObservableObject {
     let hidCapture: CorsairHIDCapture
     let commandRouter: CommandRouter
     let permissionService: PermissionService
+    let eventStore: EKEventStore
+    let msalAuth: MSALAuthService?
     private var didBootstrapWindow = false
     private var edgeMoveObserver: NSObjectProtocol?
 
@@ -34,16 +38,33 @@ final class AppEnvironment: ObservableObject {
 
         self.commandRouter = CommandRouter.shared
 
+        let sharedStore = EKEventStore()
+        self.eventStore = sharedStore
+
         let permissionService = PermissionService(probes: [
-            CalendarPermissionProbe(),
+            CalendarPermissionProbe(store: sharedStore),
             AccessibilityPermissionProbe()
         ])
         self.permissionService = permissionService
 
-        registry.register(AnyEdgeModule(TimelineCalendarModule(permissionService: permissionService)))
+        let msalAuth: MSALAuthService?
+        do {
+            msalAuth = try MSALAuthService()
+        } catch {
+            AppLog.app.error("MSAL init failed: \(String(describing: error))")
+            msalAuth = nil
+        }
+        self.msalAuth = msalAuth
+
+        registry.register(AnyEdgeModule(TimelineCalendarModule(
+            permissionService: permissionService,
+            eventStore: sharedStore,
+            msalAuth: msalAuth
+        )))
         registry.register(AnyEdgeModule(KanbanModule()))
         registry.register(AnyEdgeModule(StreamDeckModule(permissionService: permissionService)))
         registry.register(AnyEdgeModule(LockScreenModule()))
+        registry.register(AnyEdgeModule(MeetingRecorderModule()))
 
         let modules = registry.modules
         commandRouter.setGlobalDefault(.refresh) { [weak router, modules] in

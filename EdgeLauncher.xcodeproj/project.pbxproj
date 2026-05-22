@@ -6,6 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		MR00000021 /* DomainModels in Frameworks */ = {isa = PBXBuildFile; productRef = MR00000011 /* DomainModels */; };
+		MR00000022 /* LibraryStore in Frameworks */ = {isa = PBXBuildFile; productRef = MR00000012 /* LibraryStore */; };
+		MR00000023 /* RecordingEngine in Frameworks */ = {isa = PBXBuildFile; productRef = MR00000013 /* RecordingEngine */; };
+		MR00000024 /* Transcriber in Frameworks */ = {isa = PBXBuildFile; productRef = MR00000014 /* Transcriber */; };
+		MR00000025 /* Diarizer in Frameworks */ = {isa = PBXBuildFile; productRef = MR00000015 /* Diarizer */; };
+		MR00000026 /* Summarizer in Frameworks */ = {isa = PBXBuildFile; productRef = MR00000016 /* Summarizer */; };
+		MR00000027 /* Pipeline in Frameworks */ = {isa = PBXBuildFile; productRef = MR00000017 /* Pipeline */; };
+		MR00000028 /* PrivacyController in Frameworks */ = {isa = PBXBuildFile; productRef = MR00000018 /* PrivacyController */; };
+		MR00000029 /* UI in Frameworks */ = {isa = PBXBuildFile; productRef = MR00000019 /* UI */; };
+		MR0000002A /* RecordingCoordinator in Frameworks */ = {isa = PBXBuildFile; productRef = MR0000001A /* RecordingCoordinator */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		C0447D982FB6338700E328F3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -39,6 +52,16 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				MR00000021 /* DomainModels in Frameworks */,
+				MR00000022 /* LibraryStore in Frameworks */,
+				MR00000023 /* RecordingEngine in Frameworks */,
+				MR00000024 /* Transcriber in Frameworks */,
+				MR00000025 /* Diarizer in Frameworks */,
+				MR00000026 /* Summarizer in Frameworks */,
+				MR00000027 /* Pipeline in Frameworks */,
+				MR00000028 /* PrivacyController in Frameworks */,
+				MR00000029 /* UI in Frameworks */,
+				MR0000002A /* RecordingCoordinator in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -80,6 +103,7 @@
 				C0447D7E2FB6311B00E328F3 /* Sources */,
 				C0447D7F2FB6311B00E328F3 /* Frameworks */,
 				C0447D802FB6311B00E328F3 /* Resources */,
+				C0447DE12FB6312300E328F3 /* Inject Info.plist */,
 			);
 			buildRules = (
 			);
@@ -90,6 +114,16 @@
 			);
 			name = EdgeLauncher;
 			packageProductDependencies = (
+				MR00000011 /* DomainModels */,
+				MR00000012 /* LibraryStore */,
+				MR00000013 /* RecordingEngine */,
+				MR00000014 /* Transcriber */,
+				MR00000015 /* Diarizer */,
+				MR00000016 /* Summarizer */,
+				MR00000017 /* Pipeline */,
+				MR00000018 /* PrivacyController */,
+				MR00000019 /* UI */,
+				MR0000001A /* RecordingCoordinator */,
 			);
 			productName = EdgeLauncher;
 			productReference = C0447D822FB6311B00E328F3 /* EdgeLauncher.app */;
@@ -146,6 +180,9 @@
 			);
 			mainGroup = C0447D792FB6311B00E328F3;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				MR00000001 /* XCLocalSwiftPackageReference "../MeetingRecorder" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C0447D832FB6311B00E328F3 /* Products */;
 			projectDirPath = "";
@@ -173,6 +210,29 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C0447DE12FB6312300E328F3 /* Inject Info.plist */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/inject-info-plist.sh",
+			);
+			name = "Inject Info.plist";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "set -e\nbash \"$SRCROOT/scripts/inject-info-plist.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C0447D7E2FB6311B00E328F3 /* Sources */ = {
@@ -235,7 +295,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = 6VTC4DM869;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -299,7 +359,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 6VTC4DM869;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -328,13 +388,13 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6VTC4DM869;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
 				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = YES;
 				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
@@ -342,22 +402,24 @@
 				ENABLE_RESOURCE_ACCESS_LOCATION = YES;
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "윈도우를 Xeneon Edge 디스플레이로 이동하기 위해 사용합니다";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "macOS Calendar와 Outlook 일정을 위젯에 표시합니다.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "macOS Calendar와 Outlook 일정을 위젯에 표시합니다.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "현재 위치 기반 날씨 정보를 표시하기 위해 사용합니다.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "회의록 모듈에서 회의를 녹음하기 위해 마이크를 사용합니다.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "macOS 미리알림을 위젯에 표시하고 완료 처리를 위해 사용합니다.";
 				INFOPLIST_KEY_NSRemindersUsageDescription = "macOS 미리알림을 위젯에 표시하고 완료 처리를 위해 사용합니다.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "현재 위치 기반 날씨 정보를 표시하기 위해 사용합니다.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.3.21;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jongyoungpark.edgelauncher.EdgeLauncher;
+				MARKETING_VERSION = 0.3.102;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jyp.EdgeLauncher;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -377,13 +439,13 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6VTC4DM869;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
 				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = YES;
 				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
@@ -391,22 +453,24 @@
 				ENABLE_RESOURCE_ACCESS_LOCATION = YES;
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "윈도우를 Xeneon Edge 디스플레이로 이동하기 위해 사용합니다";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "macOS Calendar와 Outlook 일정을 위젯에 표시합니다.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "macOS Calendar와 Outlook 일정을 위젯에 표시합니다.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "현재 위치 기반 날씨 정보를 표시하기 위해 사용합니다.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "회의록 모듈에서 회의를 녹음하기 위해 마이크를 사용합니다.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "macOS 미리알림을 위젯에 표시하고 완료 처리를 위해 사용합니다.";
 				INFOPLIST_KEY_NSRemindersUsageDescription = "macOS 미리알림을 위젯에 표시하고 완료 처리를 위해 사용합니다.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "현재 위치 기반 날씨 정보를 표시하기 위해 사용합니다.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.3.21;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jongyoungpark.edgelauncher.EdgeLauncher;
+				MARKETING_VERSION = 0.3.102;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jyp.EdgeLauncher;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -424,10 +488,10 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6VTC4DM869;
+				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.3.21;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jongyoungpark.edgelauncher.EdgeLauncherTests;
+				MARKETING_VERSION = 0.3.102;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jyp.EdgeLauncher.Tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -444,10 +508,10 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6VTC4DM869;
+				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.3.21;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jongyoungpark.edgelauncher.EdgeLauncherTests;
+				MARKETING_VERSION = 0.3.102;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jyp.EdgeLauncher.Tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -489,6 +553,56 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		MR00000001 /* XCLocalSwiftPackageReference "../MeetingRecorder" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../MeetingRecorder;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		MR00000011 /* DomainModels */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DomainModels;
+		};
+		MR00000012 /* LibraryStore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LibraryStore;
+		};
+		MR00000013 /* RecordingEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RecordingEngine;
+		};
+		MR00000014 /* Transcriber */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Transcriber;
+		};
+		MR00000015 /* Diarizer */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Diarizer;
+		};
+		MR00000016 /* Summarizer */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Summarizer;
+		};
+		MR00000017 /* Pipeline */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Pipeline;
+		};
+		MR00000018 /* PrivacyController */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyController;
+		};
+		MR00000019 /* UI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = UI;
+		};
+		MR0000001A /* RecordingCoordinator */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RecordingCoordinator;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = C0447D7A2FB6311B00E328F3 /* Project object */;
 }

@@ -131,7 +131,7 @@ App Sandbox 네트워크 권한 문제일 가능성. [INSTALL.md](INSTALL.md#app
 `WKWebsiteDataStore.default()` 의 쿠키가 macOS 사용자 데이터 디렉토리에 저장된다. 다음 위치에서 확인:
 
 ```bash
-ls ~/Library/Containers/com.jongyoungpark.edgelauncher.EdgeLauncher/Data/Library/WebKit/
+ls ~/Library/Containers/com.jyp.EdgeLauncher/Data/Library/WebKit/
 ```
 
 이 디렉토리가 매번 삭제되면 (예: 권한 이슈) 로그인이 풀린다.

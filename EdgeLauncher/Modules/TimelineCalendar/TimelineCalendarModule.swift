@@ -1,4 +1,5 @@
 import SwiftUI
+import EventKit
 
 @MainActor
 final class TimelineCalendarModule: EdgeModule {
@@ -10,9 +11,21 @@ final class TimelineCalendarModule: EdgeModule {
     let viewModel: TimelineViewModel
     private let commandHandlerImpl: TimelineCommandHandler
 
-    init(permissionService: PermissionService) {
-        let provider = EventKitProvider()
-        let vm = TimelineViewModel(provider: provider, permission: permissionService)
+    init(permissionService: PermissionService, eventStore: EKEventStore, msalAuth: MSALAuthService?) {
+        let appleProvider = EventKitProvider(store: eventStore)
+        let providers: [any CalendarProvider]
+        if let msalAuth {
+            providers = [appleProvider, GraphCalendarProvider(auth: msalAuth)]
+        } else {
+            providers = [appleProvider]
+        }
+        let aggregating = AggregatingCalendarProvider(providers: providers)
+        let vm = TimelineViewModel(
+            provider: aggregating,
+            permission: permissionService,
+            eventStore: eventStore,
+            msalAuth: msalAuth
+        )
         self.viewModel = vm
         self.commandHandlerImpl = TimelineCommandHandler(viewModel: vm)
     }

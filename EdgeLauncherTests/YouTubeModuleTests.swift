@@ -25,9 +25,10 @@ final class YouTubeModuleTests: XCTestCase {
         XCTAssertEqual(ids, [
             "youtube", "youtube-music",
             "system-monitor", "widgets",
-            "messenger", "messenger-2", "messenger-3", "launcher",
+            "messenger", "messenger-2", "messenger-3", "messenger-4", "launcher",
             "outlook-calendar", "notion",
-            "timeline", "kanban", "streamdeck", "lock-screen"
+            "timeline", "kanban", "streamdeck", "lock-screen",
+            "meeting-recorder"
         ])
     }
 }

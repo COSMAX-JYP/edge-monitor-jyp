@@ -12,6 +12,8 @@ final class KanbanViewModel {
     let trash: TrashStore
     @ObservationIgnored
     let backup: BackupService
+    @ObservationIgnored
+    let reminderBridge: KanbanReminderBridge
 
     var searchQuery: String = ""
     var filterLabelIds: Set<UUID> = []
@@ -19,6 +21,7 @@ final class KanbanViewModel {
     var editingTargetColumnId: UUID?
     var detailCard: KanbanCard?
     var pendingDeleteCard: KanbanCard?
+    var showHiddenCards: Bool = false
 
     var editingBoard: KanbanBoard?
     var isCreatingBoard: Bool = false
@@ -33,10 +36,16 @@ final class KanbanViewModel {
     @ObservationIgnored
     private var toastClearTask: Task<Void, Never>?
 
-    init(store: KanbanStore, trash: TrashStore? = nil, backup: BackupService? = nil) {
+    init(
+        store: KanbanStore,
+        trash: TrashStore? = nil,
+        backup: BackupService? = nil,
+        reminderBridge: KanbanReminderBridge? = nil
+    ) {
         self.store = store
         self.trash = trash ?? TrashStore()
         self.backup = backup ?? BackupService(dataURL: store.dataURL)
+        self.reminderBridge = reminderBridge ?? KanbanReminderBridge()
         self.trash.sweep()
         self.backup.snapshotIfNeeded()
         self.backup.sweep()
@@ -50,10 +59,24 @@ final class KanbanViewModel {
         let needle = searchQuery.lowercased()
         let hasSearch = !searchQuery.isEmpty
         let hasFilter = !filterLabelIds.isEmpty
-        if !hasSearch && !hasFilter { return board.columns }
+        let reminderCards = reminderBridge.cards
+        let hiddenIds = Set(board.hiddenCardIds)
+        // 미리알림 컬럼이 있을 때만 reminderBridge 권한 요청 시도.
+        if reminderCards.isEmpty,
+           board.columns.contains(where: { $0.name.isKanbanReminderColumn }),
+           !reminderBridge.hasAccess {
+            Task { await reminderBridge.requestAccessIfNeeded() }
+        }
         return board.columns.map { col in
-            var filtered = col
-            filtered.cards = col.cards.filter { card in
+            var working = col
+            if col.name.isKanbanReminderColumn {
+                // 외부 미리알림을 컬럼 상단에 주입. 기존 카드는 그대로 유지.
+                working.cards = reminderCards + col.cards
+            }
+            working.cards = working.cards.filter { card in
+                let hiddenAndHiding = !showHiddenCards && hiddenIds.contains(card.id)
+                if hiddenAndHiding { return false }
+                if !hasSearch && !hasFilter { return true }
                 let matchesSearch = !hasSearch
                     || card.title.lowercased().contains(needle)
                     || card.notes.lowercased().contains(needle)
@@ -61,8 +84,33 @@ final class KanbanViewModel {
                     || !Set(card.labelIds).isDisjoint(with: filterLabelIds)
                 return matchesSearch && matchesFilter
             }
-            return filtered
+            return working
         }
+    }
+
+    func isReminderCard(_ cardId: UUID) -> Bool {
+        reminderBridge.isReminderCard(cardId)
+    }
+
+    func isHiddenCard(_ cardId: UUID) -> Bool {
+        activeBoard?.hiddenCardIds.contains(cardId) ?? false
+    }
+
+    func hideCard(_ card: KanbanCard) {
+        store.hideCard(card.id)
+        if detailCard?.id == card.id { detailCard = nil }
+    }
+
+    func unhideCard(_ card: KanbanCard) {
+        store.unhideCard(card.id)
+    }
+
+    func toggleShowHidden() {
+        showHiddenCards.toggle()
+    }
+
+    var hiddenCardCount: Int {
+        activeBoard?.hiddenCardIds.count ?? 0
     }
 
     // MARK: - Card lifecycle
@@ -73,6 +121,11 @@ final class KanbanViewModel {
     }
 
     func editCard(_ card: KanbanCard) {
+        // 미리알림 카드는 외부 데이터라 편집 불가. 디테일 패널만 띄움.
+        if reminderBridge.isReminderCard(card.id) {
+            detailCard = card
+            return
+        }
         editingCard = card
         editingTargetColumnId = nil
         detailCard = nil
@@ -102,6 +155,13 @@ final class KanbanViewModel {
     }
 
     func requestDelete(_ card: KanbanCard) {
+        // 미리알림 카드는 칸반에서 직접 삭제 불가 → Reminders 에서 완료 처리.
+        if reminderBridge.isReminderCard(card.id) {
+            _ = reminderBridge.markComplete(cardId: card.id)
+            if detailCard?.id == card.id { detailCard = nil }
+            showToast("미리알림 완료 처리됨")
+            return
+        }
         pendingDeleteCard = card
     }
 
@@ -232,6 +292,8 @@ final class KanbanViewModel {
 
     func handleDrop(ref: KanbanCardRef, toColumn: UUID, toIndex: Int) -> Bool {
         guard let board = activeBoard, ref.boardId == board.id else { return false }
+        // 미리알림 카드는 store 에 존재하지 않으므로 이동 불가.
+        if reminderBridge.isReminderCard(ref.cardId) { return false }
         store.moveCard(cardId: ref.cardId, fromColumn: ref.sourceColumnId, toColumn: toColumn, toIndex: toIndex)
         return true
     }

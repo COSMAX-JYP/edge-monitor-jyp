@@ -3,9 +3,16 @@ import SwiftUI
 struct CardView: View {
     let card: KanbanCard
     let labels: [KanbanLabel]
+    var isExternal: Bool = false
+    var hideAction: HideAction? = nil
     var onTap: () -> Void
     var onDelete: () -> Void
     @Environment(\.colorScheme) private var colorScheme
+
+    enum HideAction {
+        case hide(() -> Void)
+        case unhide(() -> Void)
+    }
 
     var body: some View {
         let style = KanbanBoardStyle(isLight: colorScheme == .light)
@@ -20,6 +27,16 @@ struct CardView: View {
                         .help(label.name)
                 }
                 Spacer()
+                if isExternal {
+                    Label("미리알림", systemImage: "checklist")
+                        .labelStyle(.iconOnly)
+                        .font(.appFootnote)
+                        .foregroundStyle(.secondary)
+                        .help("macOS 미리알림에서 동기화됨")
+                }
+                if let action = hideAction {
+                    hideButton(action: action)
+                }
             }
             Text(card.title.isEmpty ? "(제목 없음)" : card.title)
                 .font(.system(size: 19, weight: .bold))
@@ -85,6 +102,38 @@ struct CardView: View {
 
     private var stripeLabels: [KanbanLabel] {
         labels.filter { card.labelIds.contains($0.id) }
+    }
+
+    @ViewBuilder
+    private func hideButton(action: HideAction) -> some View {
+        switch action {
+        case .hide(let perform):
+            Button {
+                perform()
+            } label: {
+                Image(systemName: "eye.slash")
+                    .font(.appCallout)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("이 카드 숨기기")
+        case .unhide(let perform):
+            Button {
+                perform()
+            } label: {
+                Image(systemName: "eye")
+                    .font(.appCallout)
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("숨김 해제")
+        }
     }
 
     private func cardAccent(style: KanbanBoardStyle) -> Color {

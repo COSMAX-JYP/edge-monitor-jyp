@@ -17,8 +17,13 @@ struct CardDetailPanel: View {
             HStack {
                 Text(card.title.isEmpty ? "(제목 없음)" : card.title)
                     .font(.appTitle)
+                    .foregroundStyle(Color.primary)
                     .lineLimit(2)
                 Spacer()
+                Button("편집", action: onEdit)
+                    .kanbanDialogSecondaryButton()
+                Button("삭제", role: .destructive, action: onDelete)
+                    .kanbanDialogSecondaryButton()
                 Button {
                     onDismiss()
                 } label: {
@@ -53,16 +58,10 @@ struct CardDetailPanel: View {
             }
             checklistSection
             attachmentSection
-            Spacer()
-            HStack {
-                Button("편집", action: onEdit).font(.appBody)
-                Button("삭제", role: .destructive, action: onDelete).font(.appBody)
-            }
+            Spacer(minLength: 0)
         }
-        .padding(20)
-        .frame(width: 460)
-        .background(Rectangle().fill(.background))
-        .overlay(alignment: .leading) { Divider() }
+        .padding(24)
+        .appSheetFrame(width: 0.35...0.56, height: 0.5...0.85)
     }
 
     private var checklistSection: some View {

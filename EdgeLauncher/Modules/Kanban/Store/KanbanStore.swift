@@ -17,7 +17,12 @@ final class KanbanStore {
         self.dataURL = location
         self.backing = AtomicJSONStore<KanbanBoardData>(
             url: location,
-            default: KanbanBoardData.makeDefault()
+            default: KanbanBoardData.makeDefault(),
+            debounce: .milliseconds(400),
+            errorCategory: "Kanban",
+            migrate: { version, _ in
+                throw SchemaMigrationError.unsupportedVersion(version, supported: KanbanBoardData.schemaVersion)
+            }
         )
         if backing.value.boards.isEmpty {
             backing.replace(KanbanBoardData.makeDefault())
@@ -84,6 +89,7 @@ final class KanbanStore {
                 data.activeBoardId = data.boards.first?.id
             }
         }
+        backing.flushSyncNow()
     }
 
     // MARK: - Card
@@ -114,6 +120,7 @@ final class KanbanStore {
                 board.columns[idx].cards.removeAll { $0.id == cardId }
             }
         }
+        backing.flushSyncNow()
     }
 
     func moveCard(cardId: UUID, fromColumn: UUID, toColumn: UUID, toIndex: Int) {
@@ -131,6 +138,28 @@ final class KanbanStore {
                 insertAt = max(0, min(toIndex, board.columns[toIdx].cards.count))
             }
             board.columns[toIdx].cards.insert(card, at: insertAt)
+        }
+    }
+
+    // MARK: - Card visibility (hide / unhide)
+
+    func hideCard(_ cardId: UUID) {
+        mutateActiveBoard { board in
+            if !board.hiddenCardIds.contains(cardId) {
+                board.hiddenCardIds.append(cardId)
+            }
+        }
+    }
+
+    func unhideCard(_ cardId: UUID) {
+        mutateActiveBoard { board in
+            board.hiddenCardIds.removeAll { $0 == cardId }
+        }
+    }
+
+    func unhideAllCards() {
+        mutateActiveBoard { board in
+            board.hiddenCardIds.removeAll()
         }
     }
 
@@ -153,6 +182,7 @@ final class KanbanStore {
         mutateActiveBoard { board in
             board.columns.removeAll { $0.id == id }
         }
+        backing.flushSyncNow()
     }
 
     func reorderColumn(from: Int, to: Int) {
@@ -196,6 +226,7 @@ final class KanbanStore {
                 }
             }
         }
+        backing.flushSyncNow()
     }
 
     // MARK: - Helpers

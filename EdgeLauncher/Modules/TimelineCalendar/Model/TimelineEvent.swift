@@ -15,6 +15,7 @@ struct TimelineEvent: Identifiable, Hashable, Sendable {
     var colorHex: String?
     var lastModified: Date
     var url: URL?
+    var isOrganizer: Bool
 
     init(
         source: CalendarSource,
@@ -29,7 +30,8 @@ struct TimelineEvent: Identifiable, Hashable, Sendable {
         attendees: [Attendee] = [],
         colorHex: String? = nil,
         lastModified: Date = Date(),
-        url: URL? = nil
+        url: URL? = nil,
+        isOrganizer: Bool = false
     ) {
         self.source = source
         self.calendarItemIdentifier = calendarItemIdentifier
@@ -44,6 +46,7 @@ struct TimelineEvent: Identifiable, Hashable, Sendable {
         self.colorHex = colorHex
         self.lastModified = lastModified
         self.url = url
+        self.isOrganizer = isOrganizer
         self.id = TimelineEvent.makeId(source: source, itemId: calendarItemIdentifier, occurrence: occurrenceStart)
     }
 

@@ -2,7 +2,7 @@ import Foundation
 import os
 
 enum AppLog {
-    private static let subsystem = "com.jongyoungpark.edgelauncher"
+    private static let subsystem = "com.jyp.EdgeLauncher"
 
     static let app = Logger(subsystem: subsystem, category: "app")
     static let weather = Logger(subsystem: subsystem, category: "weather")

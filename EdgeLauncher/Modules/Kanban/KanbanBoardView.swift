@@ -30,6 +30,16 @@ struct KanbanBoardView: View {
                 onCancel: viewModel.cancelEditing
             )
         }
+        .dismissiblePopup(item: $viewModel.detailCard, onDismiss: viewModel.dismissDetail) { card in
+            CardDetailPanel(
+                card: card,
+                labels: viewModel.activeBoard?.labels ?? [],
+                viewModel: viewModel,
+                onEdit: { viewModel.editCard(card) },
+                onDelete: { viewModel.requestDelete(card) },
+                onDismiss: viewModel.dismissDetail
+            )
+        }
         .dismissiblePopup(item: $viewModel.editingBoard, onDismiss: viewModel.cancelBoardEditing) { board in
             BoardEditorSheet(
                 initial: board,
@@ -105,39 +115,27 @@ struct KanbanBoardView: View {
     private func content(width: CGFloat, height: CGFloat) -> some View {
         let columns = viewModel.visibleColumns
         if let board = viewModel.activeBoard, !columns.isEmpty {
-            HStack(spacing: 0) {
-                ScrollView(.horizontal, showsIndicators: true) {
-                    HStack(alignment: .top, spacing: columnSpacing) {
-                        ForEach(columns, id: \.id) { column in
-                            ColumnView(
-                                board: board,
-                                column: column,
-                                width: columnWidth(forVisible: max(columns.count, 1), in: width - detailWidth()),
-                                height: height,
-                                viewModel: viewModel
-                            )
-                        }
-                        AddColumnTile(width: columnWidth(forVisible: max(columns.count, 1), in: width - detailWidth())) {
-                            beginAddColumn()
-                        }
-                        .frame(height: height)
+            ScrollView(.horizontal, showsIndicators: true) {
+                HStack(alignment: .top, spacing: columnSpacing) {
+                    ForEach(columns, id: \.id) { column in
+                        ColumnView(
+                            board: board,
+                            column: column,
+                            width: columnWidth(forVisible: max(columns.count, 1), in: width),
+                            height: height,
+                            viewModel: viewModel
+                        )
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 14)
-                    .frame(minWidth: width - detailWidth(), minHeight: height, alignment: .leading)
+                    AddColumnTile(width: columnWidth(forVisible: max(columns.count, 1), in: width)) {
+                        beginAddColumn()
+                    }
+                    .frame(height: height)
                 }
-                .frame(maxWidth: .infinity)
-                if let detailCard = viewModel.detailCard {
-                    CardDetailPanel(
-                        card: detailCard,
-                        labels: board.labels,
-                        viewModel: viewModel,
-                        onEdit: { viewModel.editCard(detailCard) },
-                        onDelete: { viewModel.requestDelete(detailCard) },
-                        onDismiss: { viewModel.dismissDetail() }
-                    )
-                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 14)
+                .frame(minWidth: width, minHeight: height, alignment: .leading)
             }
+            .frame(maxWidth: .infinity)
         } else {
             VStack(spacing: 14) {
                 Image(systemName: "rectangle.split.3x1")
@@ -162,10 +160,6 @@ struct KanbanBoardView: View {
         let totalSpacing = columnSpacing * CGFloat(n + 1)
         let raw = (width - totalSpacing) / CGFloat(n)
         return max(minColumnWidth, min(raw, maxColumnWidth))
-    }
-
-    private func detailWidth() -> CGFloat {
-        viewModel.detailCard != nil ? 360 : 0
     }
 
     private func beginAddColumn() {

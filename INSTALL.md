@@ -80,9 +80,21 @@ make icon
 
 `scripts/make-icon.py` 가 1024 PNG 와 모든 사이즈 변형을 `AppIcon.appiconset/` 에 다시 생성한다. Pillow 가 필요하다: `python3 -m pip install Pillow`.
 
+## 마이크 권한 (회의록 모듈)
+
+회의록 모듈 진입 시 마이크 권한 배너가 자동으로 나타납니다. 배너의 "권한 요청" 또는 "시스템 설정 열기" 버튼을 사용하세요.
+
+권한 다이얼로그가 아예 뜨지 않는 경우 (TCC DB 캐시 문제):
+
+```bash
+tccutil reset Microphone com.jyp.EdgeLauncher
+```
+
+실행 후 EdgeLauncher 를 재시작하면 권한 요청 다이얼로그가 다시 표시됩니다.
+
 ## 삭제
 
 ```bash
 rm -rf ~/Applications/EdgeLauncher.app
-defaults delete com.jongyoungpark.edgelauncher.EdgeLauncher 2>/dev/null
+defaults delete com.jyp.EdgeLauncher 2>/dev/null
 ```

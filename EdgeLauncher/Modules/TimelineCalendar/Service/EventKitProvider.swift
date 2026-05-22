@@ -29,7 +29,8 @@ final class EventKitProvider: CalendarProvider {
                 title: ek.title,
                 sourceTitle: ek.source.title,
                 colorHex: Self.hexString(ek.cgColor),
-                allowsModifications: ek.allowsContentModifications
+                allowsModifications: ek.allowsContentModifications,
+                providerKind: .apple
             )
         }
     }

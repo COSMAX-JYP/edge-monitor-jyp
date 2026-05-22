@@ -175,9 +175,12 @@ struct KanbanColorEditorSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            HStack {
-                Text(title).font(.appTitle)
-                Spacer()
+            HStack(spacing: 12) {
+                Text(title)
+                    .font(.appTitle)
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+                Spacer(minLength: 12)
                 Button("취소", action: onCancel)
                     .kanbanDialogSecondaryButton()
                 Button("저장") {
@@ -198,8 +201,10 @@ struct KanbanColorEditorSheet: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(usesDefault ? "기본 색상" : colorHex)
                         .font(.appHeading)
+                        .foregroundStyle(Color.primary)
                     Toggle("기본 색상 사용", isOn: $usesDefault)
                         .font(.appCallout)
+                        .foregroundStyle(Color.primary)
                 }
             }
 
@@ -210,9 +215,9 @@ struct KanbanColorEditorSheet: View {
                     .opacity(usesDefault ? 0.45 : 1)
             }
 
-            Spacer()
+            Spacer(minLength: 0)
         }
         .padding(24)
-        .appSheetFrame(width: 0.38...0.55, height: 0.44...0.65)
+        .frame(minWidth: 520, idealWidth: 640, maxWidth: 720, minHeight: 380, idealHeight: 420, maxHeight: 480)
     }
 }

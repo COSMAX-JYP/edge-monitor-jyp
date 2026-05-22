@@ -8,6 +8,16 @@ nonisolated struct EventDraft: Hashable, Sendable {
     var end: Date
     var isAllDay: Bool
     var calendarId: String
+    var attendees: [Attendee]
+    var isOnlineMeeting: Bool
+    var responseRequested: Bool
+    var allowNewTimeProposals: Bool
+    var reminderMinutesBeforeStart: Int?
+    var importance: EventImportance
+    var sensitivity: EventSensitivity
+    var showAs: EventShowAs
+    var categories: [String]
+    var recurrence: RecurrencePattern?
 
     init(
         title: String = "",
@@ -16,7 +26,17 @@ nonisolated struct EventDraft: Hashable, Sendable {
         start: Date = Date(),
         end: Date = Date().addingTimeInterval(3600),
         isAllDay: Bool = false,
-        calendarId: String = ""
+        calendarId: String = "",
+        attendees: [Attendee] = [],
+        isOnlineMeeting: Bool = false,
+        responseRequested: Bool = true,
+        allowNewTimeProposals: Bool = true,
+        reminderMinutesBeforeStart: Int? = 15,
+        importance: EventImportance = .normal,
+        sensitivity: EventSensitivity = .normal,
+        showAs: EventShowAs = .busy,
+        categories: [String] = [],
+        recurrence: RecurrencePattern? = nil
     ) {
         self.title = title
         self.notes = notes
@@ -25,6 +45,52 @@ nonisolated struct EventDraft: Hashable, Sendable {
         self.end = end
         self.isAllDay = isAllDay
         self.calendarId = calendarId
+        self.attendees = attendees
+        self.isOnlineMeeting = isOnlineMeeting
+        self.responseRequested = responseRequested
+        self.allowNewTimeProposals = allowNewTimeProposals
+        self.reminderMinutesBeforeStart = reminderMinutesBeforeStart
+        self.importance = importance
+        self.sensitivity = sensitivity
+        self.showAs = showAs
+        self.categories = categories
+        self.recurrence = recurrence
+    }
+}
+
+enum EventImportance: String, Codable, Hashable, Sendable, CaseIterable {
+    case low, normal, high
+    var displayName: String {
+        switch self {
+        case .low: return "낮음"
+        case .normal: return "일반"
+        case .high: return "높음"
+        }
+    }
+}
+
+enum EventSensitivity: String, Codable, Hashable, Sendable, CaseIterable {
+    case normal, personal, `private`, confidential
+    var displayName: String {
+        switch self {
+        case .normal: return "일반"
+        case .personal: return "개인"
+        case .private: return "비공개"
+        case .confidential: return "기밀"
+        }
+    }
+}
+
+enum EventShowAs: String, Codable, Hashable, Sendable, CaseIterable {
+    case free, tentative, busy, oof, workingElsewhere
+    var displayName: String {
+        switch self {
+        case .free: return "여유"
+        case .tentative: return "잠정"
+        case .busy: return "바쁨"
+        case .oof: return "부재중"
+        case .workingElsewhere: return "외부 근무"
+        }
     }
 }
 
@@ -34,6 +100,23 @@ nonisolated struct CalendarChoice: Identifiable, Hashable, Sendable {
     var sourceTitle: String
     var colorHex: String?
     var allowsModifications: Bool
+    var providerKind: CalendarSourceKind
+
+    init(
+        id: String,
+        title: String,
+        sourceTitle: String,
+        colorHex: String? = nil,
+        allowsModifications: Bool = true,
+        providerKind: CalendarSourceKind = .apple
+    ) {
+        self.id = id
+        self.title = title
+        self.sourceTitle = sourceTitle
+        self.colorHex = colorHex
+        self.allowsModifications = allowsModifications
+        self.providerKind = providerKind
+    }
 }
 
 @MainActor

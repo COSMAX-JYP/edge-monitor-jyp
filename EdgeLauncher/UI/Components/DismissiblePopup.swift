@@ -1,14 +1,32 @@
 import SwiftUI
 
+struct DismissiblePopupLayout: Equatable {
+    enum Mode: Equatable {
+        case centered
+        case fillContainer(inset: CGFloat)
+    }
+
+    var mode: Mode
+    var cornerRadius: CGFloat
+
+    static let centered = DismissiblePopupLayout(mode: .centered, cornerRadius: 20)
+
+    static func fillContainer(inset: CGFloat = 0, cornerRadius: CGFloat = 0) -> DismissiblePopupLayout {
+        DismissiblePopupLayout(mode: .fillContainer(inset: inset), cornerRadius: cornerRadius)
+    }
+}
+
 extension View {
     func dismissiblePopup<PopupContent: View>(
         isPresented: Binding<Bool>,
+        layout: DismissiblePopupLayout = .centered,
         onDismiss: (() -> Void)? = nil,
         @ViewBuilder content popupContent: @escaping () -> PopupContent
     ) -> some View {
         modifier(
             BoolDismissiblePopupModifier(
                 isPresented: isPresented,
+                layout: layout,
                 onDismiss: onDismiss,
                 popupContent: popupContent
             )
@@ -17,12 +35,14 @@ extension View {
 
     func dismissiblePopup<Item: Identifiable, PopupContent: View>(
         item: Binding<Item?>,
+        layout: DismissiblePopupLayout = .centered,
         onDismiss: (() -> Void)? = nil,
         @ViewBuilder content popupContent: @escaping (Item) -> PopupContent
     ) -> some View {
         modifier(
             ItemDismissiblePopupModifier(
                 item: item,
+                layout: layout,
                 onDismiss: onDismiss,
                 popupContent: popupContent
             )
@@ -32,77 +52,97 @@ extension View {
 
 private struct BoolDismissiblePopupModifier<PopupContent: View>: ViewModifier {
     @Binding var isPresented: Bool
+    let layout: DismissiblePopupLayout
     let onDismiss: (() -> Void)?
     let popupContent: () -> PopupContent
 
     func body(content: Content) -> some View {
-        content
-            .overlay {
-                if isPresented {
-                    DismissiblePopupOverlay {
-                        dismiss()
-                    } content: {
-                        popupContent()
-                    }
-                    .transition(.opacity.combined(with: .scale(scale: 0.985)))
+        content.overlay {
+            if isPresented {
+                DismissiblePopupOverlay(layout: layout) {
+                    isPresented = false
+                    onDismiss?()
+                } content: {
+                    popupContent()
                 }
+                .transition(.opacity)
             }
-            .animation(.easeOut(duration: 0.16), value: isPresented)
-    }
-
-    private func dismiss() {
-        isPresented = false
-        onDismiss?()
+        }
     }
 }
 
 private struct ItemDismissiblePopupModifier<Item: Identifiable, PopupContent: View>: ViewModifier {
     @Binding var item: Item?
+    let layout: DismissiblePopupLayout
     let onDismiss: (() -> Void)?
     let popupContent: (Item) -> PopupContent
 
     func body(content: Content) -> some View {
-        content
-            .overlay {
-                if let item {
-                    DismissiblePopupOverlay {
-                        dismiss()
-                    } content: {
-                        popupContent(item)
-                    }
-                    .transition(.opacity.combined(with: .scale(scale: 0.985)))
+        content.overlay {
+            if let item {
+                DismissiblePopupOverlay(layout: layout) {
+                    self.item = nil
+                    onDismiss?()
+                } content: {
+                    popupContent(item)
                 }
+                .transition(.opacity)
             }
-            .animation(.easeOut(duration: 0.16), value: item?.id)
-    }
-
-    private func dismiss() {
-        item = nil
-        onDismiss?()
+        }
     }
 }
 
 private struct DismissiblePopupOverlay<PopupContent: View>: View {
+    let layout: DismissiblePopupLayout
     let onOutsideTap: () -> Void
     let content: () -> PopupContent
 
     var body: some View {
-        ZStack {
-            Color.black.opacity(0.42)
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture(perform: onOutsideTap)
+        // Container-relative sizing: GeometryReader reads the OVERLAY parent (e.g. the
+        // StreamDeckView VStack), not the screen. This is the architectural fix —
+        // popups stay within their host's bounds and can't slide behind the sidebar.
+        GeometryReader { proxy in
+            ZStack {
+                Color.black.opacity(0.42)
+                    .contentShape(Rectangle())
+                    .onTapGesture(perform: onOutsideTap)
 
-            content()
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.16), lineWidth: 1)
-                }
-                .shadow(color: .black.opacity(0.38), radius: 34, y: 18)
-                .contentShape(Rectangle())
+                popup(in: proxy.size)
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .clipped()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .zIndex(10_000)
+    }
+
+    @ViewBuilder
+    private func popup(in size: CGSize) -> some View {
+        switch layout.mode {
+        case .centered:
+            decorated(content())
+        case .fillContainer(let inset):
+            decorated(
+                content()
+                    .frame(
+                        width: max(size.width - inset * 2, 0),
+                        height: max(size.height - inset * 2, 0),
+                        alignment: .topLeading
+                    )
+            )
+            .padding(inset)
+        }
+    }
+
+    private func decorated<V: View>(_ view: V) -> some View {
+        let shape = RoundedRectangle(cornerRadius: layout.cornerRadius, style: .continuous)
+        return view
+            .background(.regularMaterial, in: shape)
+            .clipShape(shape)
+            .overlay {
+                shape.strokeBorder(Color.primary.opacity(0.16), lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(0.38), radius: 34, y: 18)
+            .contentShape(Rectangle())
+            .onTapGesture {}
     }
 }

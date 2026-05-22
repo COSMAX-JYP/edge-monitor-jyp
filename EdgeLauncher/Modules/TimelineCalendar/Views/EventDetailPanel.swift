@@ -6,6 +6,7 @@ struct EventDetailPanel: View {
     var onEdit: () -> Void
     var onDelete: () -> Void
     var onDismiss: () -> Void
+    var onRespond: ((GraphCalendarProvider.ResponseAction, String?) -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -70,6 +71,35 @@ struct EventDetailPanel: View {
                     Label(meetingLabel(url), systemImage: "link")
                 }
                 .font(.appCallout)
+            }
+            if case .outlook = event.source, onRespond != nil {
+                if event.isOrganizer {
+                    Divider()
+                    HStack(spacing: 6) {
+                        Image(systemName: "person.crop.circle.badge.checkmark")
+                            .foregroundStyle(.blue)
+                        Text("주최자입니다. 응답은 참석자만 가능합니다.")
+                            .font(.appCaption)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Divider()
+                    Text("응답").font(.appFootnote).foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Button {
+                            onRespond?(.accept, nil)
+                        } label: { Label("수락", systemImage: "checkmark.circle.fill").font(.appCallout) }
+                        .buttonStyle(.borderedProminent).tint(.green)
+                        Button {
+                            onRespond?(.tentative, nil)
+                        } label: { Label("잠정", systemImage: "questionmark.circle").font(.appCallout) }
+                        .buttonStyle(.bordered).tint(.orange)
+                        Button {
+                            onRespond?(.decline, nil)
+                        } label: { Label("거절", systemImage: "xmark.circle").font(.appCallout) }
+                        .buttonStyle(.bordered).tint(.red)
+                    }
+                }
             }
             Spacer()
             HStack {

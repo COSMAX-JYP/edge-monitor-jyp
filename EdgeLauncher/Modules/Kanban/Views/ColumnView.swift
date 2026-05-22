@@ -35,11 +35,12 @@ struct ColumnView: View {
                         .onTapGesture {
                             viewModel.startNewCard(in: column.id)
                         }
-                    LazyVStack(spacing: 12) {
+                    VStack(spacing: 12) {
                         ForEach(Array(column.cards.enumerated()), id: \.element.id) { index, card in
                             DraggableCardRow(
                                 boardId: board.id,
                                 columnId: column.id,
+                                columnName: column.name,
                                 index: index,
                                 card: card,
                                 labels: board.labels,
@@ -120,6 +121,16 @@ struct ColumnView: View {
                     Label("색상 변경", systemImage: "paintpalette")
                 }
                 Divider()
+                Button {
+                    viewModel.toggleShowHidden()
+                } label: {
+                    if viewModel.showHiddenCards {
+                        Label("숨기기", systemImage: "eye.slash")
+                    } else {
+                        Label("숨김 표시 (\(viewModel.hiddenCardCount))", systemImage: "eye")
+                    }
+                }
+                Divider()
                 Button(role: .destructive) {
                     viewModel.deleteColumn(column.id)
                 } label: {
@@ -161,27 +172,62 @@ struct ColumnView: View {
 private struct DraggableCardRow: View {
     let boardId: UUID
     let columnId: UUID
+    let columnName: String
     let index: Int
     let card: KanbanCard
     let labels: [KanbanLabel]
     @Bindable var viewModel: KanbanViewModel
 
     var body: some View {
+        let isExternal = viewModel.isReminderCard(card.id)
+        let isHidden = viewModel.isHiddenCard(card.id)
+        let showsHideAction = columnName.contains("완료")
+        let hideAction: CardView.HideAction? = {
+            guard showsHideAction else { return nil }
+            if isHidden {
+                return .unhide({ viewModel.unhideCard(card) })
+            }
+            return .hide({ viewModel.hideCard(card) })
+        }()
         CardView(
             card: card,
             labels: labels,
+            isExternal: isExternal,
+            hideAction: hideAction,
             onTap: { viewModel.editCard(card) },
             onDelete: { viewModel.requestDelete(card) }
         )
-        .onDrag {
-            viewModel.dragProvider(ref: KanbanCardRef(
-                cardId: card.id,
-                boardId: boardId,
-                sourceColumnId: columnId
-            ))
-        }
+        .modifier(ExternalCardDragModifier(
+            isExternal: isExternal,
+            cardId: card.id,
+            boardId: boardId,
+            columnId: columnId,
+            viewModel: viewModel
+        ))
         .onDrop(of: [.kanbanCardRef, .plainText], isTargeted: nil) { providers in
             viewModel.handleDrop(providers: providers, toColumn: columnId, toIndex: index)
+        }
+    }
+}
+
+private struct ExternalCardDragModifier: ViewModifier {
+    let isExternal: Bool
+    let cardId: UUID
+    let boardId: UUID
+    let columnId: UUID
+    let viewModel: KanbanViewModel
+
+    func body(content: Content) -> some View {
+        if isExternal {
+            content
+        } else {
+            content.onDrag {
+                viewModel.dragProvider(ref: KanbanCardRef(
+                    cardId: cardId,
+                    boardId: boardId,
+                    sourceColumnId: columnId
+                ))
+            }
         }
     }
 }

@@ -2,22 +2,32 @@ import SwiftUI
 
 struct TimelineCalendarView: View {
     @Bindable var viewModel: TimelineViewModel
-    private let layoutWidth: CGFloat
-    private let leadingPad: CGFloat = 16
-    private let trailingPad: CGFloat = 16
-    private let laneHeight: CGFloat = 360
+    private let layout: VerticalRulerLayout
 
-    init(viewModel: TimelineViewModel, contentWidth: CGFloat = 2370) {
+    init(viewModel: TimelineViewModel, pixelsPerHour: CGFloat = 60) {
         self.viewModel = viewModel
-        self.layoutWidth = contentWidth
+        self.layout = VerticalRulerLayout(startHour: 0, endHour: 24, pixelsPerHour: pixelsPerHour)
     }
 
     var body: some View {
         HStack(spacing: 0) {
+            if viewModel.sidebarVisible {
+                CalendarSidebarView(viewModel: viewModel)
+                    .transition(.move(edge: .leading))
+                Divider()
+            }
+
             VStack(spacing: 0) {
                 DateHeaderView(viewModel: viewModel)
                 Divider()
                 content
+                if let message = viewModel.errorMessage {
+                    Text(message)
+                        .font(.appFootnote)
+                        .foregroundStyle(.red)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -27,11 +37,15 @@ struct TimelineCalendarView: View {
                     calendars: viewModel.calendars,
                     onEdit: { viewModel.startEditEvent(detail) },
                     onDelete: { viewModel.requestDelete(detail) },
-                    onDismiss: { viewModel.dismissDetail() }
+                    onDismiss: { viewModel.dismissDetail() },
+                    onRespond: { action, comment in
+                        Task { await viewModel.respondToOutlookEvent(detail, action: action, comment: comment) }
+                    }
                 )
                 .transition(.move(edge: .trailing))
             }
         }
+        .animation(.easeInOut(duration: 0.18), value: viewModel.sidebarVisible)
         .task {
             await viewModel.onAppear()
         }
@@ -40,6 +54,7 @@ struct TimelineCalendarView: View {
                 initial: draft,
                 calendars: viewModel.calendars,
                 isNew: viewModel.editorTargetEvent == nil,
+                attendeeSearchService: viewModel.attendeeSearchService,
                 onSave: { updated in
                     await viewModel.saveEditor(updated)
                 },
@@ -86,103 +101,15 @@ struct TimelineCalendarView: View {
         }
     }
 
+    @ViewBuilder
     private var timeline: some View {
-        let ruler = TimeRulerLayout(startHour: 6, endHour: 22, totalWidth: layoutWidth)
-        let winStart = ruler.windowStart(on: viewModel.currentDay)
-        let winEnd = ruler.windowEnd(on: viewModel.currentDay)
-        let placements = EventLayoutEngine.layout(
-            events: viewModel.events,
-            windowStart: winStart,
-            windowEnd: winEnd
-        )
-        let allDay = EventLayoutEngine.allDayEvents(viewModel.events)
-
-        return VStack(alignment: .leading, spacing: 0) {
-            if !allDay.isEmpty {
-                allDayBand(events: allDay)
-                Divider()
-            }
-            ScrollView(.horizontal, showsIndicators: true) {
-                ZStack(alignment: .topLeading) {
-                    TimelineRulerView(layout: ruler)
-                        .frame(width: ruler.totalWidth, height: laneHeight)
-                    laneTapLayer(ruler: ruler)
-                    TimelineLaneView(
-                        placements: placements,
-                        layout: ruler,
-                        day: viewModel.currentDay,
-                        baseColor: .accentColor,
-                        laneHeight: laneHeight,
-                        onTapEvent: { viewModel.showDetail($0) }
-                    )
-                    .frame(width: ruler.totalWidth, height: laneHeight)
-                    NowIndicatorView(layout: ruler, day: viewModel.currentDay)
-                        .frame(width: ruler.totalWidth, height: laneHeight)
-                }
-                .padding(.horizontal, 8)
-            }
-            if let message = viewModel.errorMessage {
-                Text(message)
-                    .font(.appFootnote)
-                    .foregroundStyle(.red)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
-            }
-            if viewModel.events.isEmpty && !viewModel.isLoading {
-                Text("표시할 일정이 없습니다 · Cmd+N 으로 추가")
-                    .font(.appBody)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 24)
-            }
-        }
-    }
-
-    private func laneTapLayer(ruler: TimeRulerLayout) -> some View {
-        Rectangle()
-            .fill(Color.clear)
-            .frame(width: ruler.totalWidth, height: laneHeight)
-            .contentShape(Rectangle())
-            .gesture(
-                SpatialTapGesture(count: 2)
-                    .onEnded { value in
-                        let snapped = snappedTime(x: value.location.x, ruler: ruler)
-                        viewModel.startNewEvent(at: snapped)
-                    }
-            )
-    }
-
-    private func snappedTime(x: CGFloat, ruler: TimeRulerLayout) -> Date {
-        let raw = ruler.date(at: x, on: viewModel.currentDay)
-        let cal = Calendar.current
-        let minute = cal.component(.minute, from: raw)
-        let rounded = (minute / 15) * 15
-        let hour = cal.component(.hour, from: raw)
-        return cal.date(bySettingHour: hour, minute: rounded, second: 0, of: cal.startOfDay(for: viewModel.currentDay)) ?? raw
-    }
-
-    private func allDayBand(events: [TimelineEvent]) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(events, id: \.id) { event in
-                    Text(event.title)
-                        .font(.appFootnote)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.accentColor.opacity(0.18))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 4)
-                                .strokeBorder(Color.accentColor.opacity(0.5), lineWidth: 1)
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture { viewModel.showDetail(event) }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
+        switch viewModel.viewMode {
+        case .day:
+            DayView(viewModel: viewModel, day: viewModel.currentDay, layout: layout)
+        case .week:
+            WeekView(viewModel: viewModel, layout: layout)
+        case .month:
+            MonthView(viewModel: viewModel)
         }
     }
 }

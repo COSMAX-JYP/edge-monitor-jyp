@@ -35,7 +35,10 @@ struct RootView: View {
         }
         .frame(minWidth: 1792, minHeight: 672)
         .preferredColorScheme(isLightTheme ? .light : .dark)
-        .animation(.easeInOut(duration: 0.18), value: router.activeID)
+        // Removed `.animation(value: router.activeID)` — animating the whole module tree
+        // during tab switches while AppKit is also doing a fullscreen/live-resize cascade
+        // caused crashes in SwiftUI AppKitWindowController.updateToolbarIfNeeded (KVO
+        // observer removal failure).
         .animation(.easeInOut(duration: 0.20), value: themeMode)
         .onReceive(NotificationCenter.default.publisher(for: .moduleIconEditorRequested)) { note in
             editingIconModuleID = note.userInfo?["moduleID"] as? String

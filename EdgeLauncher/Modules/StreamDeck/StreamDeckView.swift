@@ -32,7 +32,11 @@ struct StreamDeckView: View {
                 .background(Color.red.opacity(0.1))
             }
         }
-        .dismissiblePopup(item: $viewModel.editingButton, onDismiss: viewModel.cancelEditing) { btn in
+        .dismissiblePopup(
+            item: $viewModel.editingButton,
+            layout: .fillContainer(),
+            onDismiss: viewModel.cancelEditing
+        ) { btn in
             ActionEditorView(
                 initial: btn,
                 onSave: viewModel.saveButton,

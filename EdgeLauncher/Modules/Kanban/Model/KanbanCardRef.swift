@@ -13,5 +13,5 @@ nonisolated struct KanbanCardRef: Codable, Hashable, Sendable, Transferable {
 }
 
 extension UTType {
-    nonisolated static let kanbanCardRef = UTType(exportedAs: "com.jongyoungpark.edgelauncher.kanban-card-ref")
+    nonisolated static let kanbanCardRef = UTType(exportedAs: "com.jyp.EdgeLauncher.kanban-card-ref")
 }
