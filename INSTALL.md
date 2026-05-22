@@ -80,6 +80,56 @@ make icon
 
 `scripts/make-icon.py` 가 1024 PNG 와 모든 사이즈 변형을 `AppIcon.appiconset/` 에 다시 생성한다. Pillow 가 필요하다: `python3 -m pip install Pillow`.
 
+## 접근성 + 입력 모니터링 권한 (터치 → 합성 클릭)
+
+Edge 터치를 Edge 디스플레이의 정확한 좌표로 합성 클릭하려면 두 가지 권한이 모두 필요합니다.
+
+| 권한 | 용도 |
+|---|---|
+| 입력 모니터링 (Input Monitoring) | `IOHIDManagerOpen(SeizeDevice)` 로 터치 패널 원시 입력을 점유 |
+| 접근성 (Accessibility) | `CGEvent.post` 로 합성 클릭 이벤트를 시스템 이벤트 탭에 주입 |
+
+### 권한 부여 절차
+
+1. 시스템 설정 → 개인정보 보호 및 보안 → **접근성** → `+` → EdgeLauncher.app 추가 후 체크.
+2. 시스템 설정 → 개인정보 보호 및 보안 → **입력 모니터링** → `+` → EdgeLauncher.app 추가 후 체크.
+3. EdgeLauncher 를 완전 종료 후 재시작.
+
+설치 위치는 환경에 따라 다음 중 하나입니다.
+
+- `~/Applications/EdgeLauncher.app` (`make install` 결과)
+- `~/Library/Developer/Xcode/DerivedData/EdgeLauncher-*/Build/Products/Debug/EdgeLauncher.app` (Xcode 디버그 빌드)
+
+### Bundle ID 변경 후 권한이 끊긴 증상
+
+macOS 의 접근성/입력 모니터링 권한은 Bundle ID 단위로 부여됩니다. Bundle ID 가 바뀌면 (예: `com.jongyoungpark.edgelauncher.EdgeLauncher` → `com.jyp.EdgeLauncher`) 새 Bundle ID 는 별개 앱으로 인식되어 권한이 끊깁니다.
+
+증상:
+
+- Edge 디스플레이 터치 시 커서가 Edge 화면으로 이동하지 않고 다른 모니터에 남아있음.
+- 합성 클릭이 엉뚱한 위치에서 발생하거나 아예 동작 안 함.
+
+진단: `/tmp/edgelauncher-hid.log` 의 앱 시작 직후 네 줄 확인.
+
+| 값 | 정상 |
+|---|---|
+| `IOHIDRequestAccess(listen)` | `true` |
+| `IOHIDRequestAccess(postEvent)` | `true` |
+| `AXIsProcessTrusted` | `true` |
+| `manager open(seize) result` | `success` |
+
+하나라도 `false` 또는 `notPermitted` 면 위 절차로 권한 재부여.
+
+### TCC 캐시 리셋 (권한 목록에 안 보이거나 토글이 잠긴 경우)
+
+```bash
+tccutil reset Accessibility com.jyp.EdgeLauncher
+tccutil reset ListenEvent com.jyp.EdgeLauncher
+tccutil reset PostEvent com.jyp.EdgeLauncher
+```
+
+리셋 후 EdgeLauncher 를 재시작하면 권한 요청 다이얼로그가 다시 표시됩니다.
+
 ## 마이크 권한 (회의록 모듈)
 
 회의록 모듈 진입 시 마이크 권한 배너가 자동으로 나타납니다. 배너의 "권한 요청" 또는 "시스템 설정 열기" 버튼을 사용하세요.
