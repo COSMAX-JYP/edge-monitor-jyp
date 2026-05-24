@@ -128,8 +128,14 @@ struct KanbanBoardView: View {
                             width: columnWidth(forVisible: max(columns.count, 1), in: width),
                             height: height,
                             viewModel: viewModel,
-                            onWidthDrag: onColumnWidthDrag
+                            onWidthDrag: nil
                         )
+                        if let onColumnWidthDrag {
+                            // Codex 권고: overlay 가 아니라 sibling 으로 둬야 horizontal/vertical
+                            // ScrollView 가 drag 를 가로채지 않는다. ColumnView 의 onDrop 모디파이어
+                            // 영역 바깥에 위치.
+                            KanbanColumnResizeHandle(height: height, onWidthDrag: onColumnWidthDrag)
+                        }
                     }
                     AddColumnTile(width: columnWidth(forVisible: max(columns.count, 1), in: width)) {
                         beginAddColumn()
@@ -178,6 +184,33 @@ struct KanbanBoardView: View {
             viewModel.addColumn(name: trimmed)
         }
         newColumnName = ""
+    }
+}
+
+/// 컬럼 사이에 놓이는 가는 드래그 핸들. ColumnView 의 onDrop / 내부 ScrollView 영역
+/// 바깥에 sibling 으로 위치하여 horizontal/vertical ScrollView 와 gesture 충돌이 없다.
+struct KanbanColumnResizeHandle: View {
+    let height: CGFloat
+    let onWidthDrag: (CGFloat, Bool) -> Void
+
+    var body: some View {
+        Rectangle()
+            .fill(Color.clear)
+            .frame(width: 12, height: height)
+            .overlay(
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(Color.primary.opacity(0.18))
+                    .frame(width: 3, height: 32)
+            )
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                if hovering { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in onWidthDrag(value.translation.width, false) }
+                    .onEnded { value in onWidthDrag(value.translation.width, true) }
+            )
     }
 }
 

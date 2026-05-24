@@ -75,29 +75,6 @@ struct ColumnView: View {
             }
         }
         .frame(width: width, height: height)
-        .overlay(alignment: .trailing) {
-            if let onWidthDrag {
-                // 우측 가장자리 12pt 폭 드래그 핸들. ScrollView 의 horizontal pan 이
-                // 일반 .gesture 를 가로채는 문제 회피를 위해 highPriorityGesture 사용.
-                // fill 을 완전 투명 대신 약한 색으로 칠해야 hit-test 가 잡힌다.
-                ZStack {
-                    Color.primary.opacity(0.0001) // hit-test 가능하면서 보이진 않게
-                    RoundedRectangle(cornerRadius: 1)
-                        .fill(Color.primary.opacity(0.25))
-                        .frame(width: 3, height: 32)
-                }
-                .frame(width: 12)
-                .contentShape(Rectangle())
-                .onHover { hovering in
-                    if hovering { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
-                }
-                .highPriorityGesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in onWidthDrag(value.translation.width, false) }
-                        .onEnded { value in onWidthDrag(value.translation.width, true) }
-                )
-            }
-        }
         .dismissiblePopup(isPresented: $isEditingColor) {
             KanbanColorEditorSheet(
                 title: "\(column.name) 색상",
