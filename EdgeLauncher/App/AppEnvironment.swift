@@ -15,6 +15,7 @@ final class AppEnvironment: ObservableObject {
     let permissionService: PermissionService
     let eventStore: EKEventStore
     let msalAuth: MSALAuthService?
+    let kanbanStore: KanbanStore
     private var didBootstrapWindow = false
     private var edgeMoveObserver: NSObjectProtocol?
 
@@ -62,7 +63,9 @@ final class AppEnvironment: ObservableObject {
             eventStore: sharedStore,
             msalAuth: msalAuth
         )))
-        registry.register(AnyEdgeModule(KanbanModule()))
+        let kanbanStore = KanbanStore()
+        self.kanbanStore = kanbanStore
+        registry.register(AnyEdgeModule(KanbanModule(store: kanbanStore)))
         registry.register(AnyEdgeModule(StreamDeckModule(permissionService: permissionService)))
         registry.register(AnyEdgeModule(LockScreenModule()))
         registry.register(AnyEdgeModule(MeetingRecorderModule()))
