@@ -26,6 +26,7 @@ final class YouTubeModuleTests: XCTestCase {
             "youtube", "youtube-music",
             "system-monitor", "widgets",
             "messenger", "messenger-2", "messenger-3", "messenger-4", "launcher",
+            "browser",
             "outlook-calendar", "notion",
             "timeline", "kanban", "streamdeck", "lock-screen",
             "meeting-recorder"
