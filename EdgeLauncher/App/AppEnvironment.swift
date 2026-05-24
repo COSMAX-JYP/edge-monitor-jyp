@@ -108,6 +108,17 @@ final class AppEnvironment: ObservableObject {
         }
     }
 
+    private func rebindSlidePanelHotKey() {
+        do {
+            try slidePanelHotKey.bind(
+                keyCode: slidePanelSettings.hotKeyCode,
+                modifiers: slidePanelSettings.hotKeyModifiers
+            ) { [weak slidePanelController] in slidePanelController?.toggle() }
+        } catch {
+            AppLog.app.error("SlidePad hotkey bind failed: \(String(describing: error))")
+        }
+    }
+
     @discardableResult
     func bootstrapWindowIfNeeded() -> Bool {
         guard !didBootstrapWindow else { return false }
@@ -128,14 +139,11 @@ final class AppEnvironment: ObservableObject {
         hidCapture.start()
 
         // SlidePad 단축키 등록 + 패널 wake-up. v2.1: 핫키 실패 시 View 메뉴 fallback (Task 13) 제공.
-        do {
-            try slidePanelHotKey.bind(
-                keyCode: slidePanelSettings.hotKeyCode,
-                modifiers: slidePanelSettings.hotKeyModifiers
-            ) { [weak slidePanelController] in slidePanelController?.toggle() }
-        } catch {
-            AppLog.app.error("SlidePad hotkey bind failed: \(String(describing: error))")
-        }
+        rebindSlidePanelHotKey()
+
+        slidePanelController.installSystemObservers(rebindHotKey: { [weak self] in
+            self?.rebindSlidePanelHotKey()
+        })
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak slidePanelController] in
             slidePanelController?.warmUp()

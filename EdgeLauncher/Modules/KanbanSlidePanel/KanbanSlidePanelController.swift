@@ -18,6 +18,8 @@ final class KanbanSlidePanelController {
     private var panelViewModel: KanbanViewModel?
     private var animationToken: Int = 0
     private var autoHide: KanbanSlidePanelAutoHide?
+    private var wakeObserver: NSObjectProtocol?
+    private var screenChangeObserver: NSObjectProtocol?
 
     init(store: KanbanStore, settings: KanbanSlidePanelSettings) {
         self.store = store
@@ -70,6 +72,28 @@ final class KanbanSlidePanelController {
     func setPinned(_ pinned: Bool) { settings.isPinned = pinned }
 
     func warmUp() { ensurePanelCreated() }
+
+    // MARK: - System observers (sleep/wake, display reconfig)
+    func installSystemObservers(rebindHotKey: @escaping @MainActor () -> Void) {
+        let wsc = NSWorkspace.shared.notificationCenter
+        if wakeObserver == nil {
+            wakeObserver = wsc.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { _ in
+                Task { @MainActor in rebindHotKey() }
+            }
+        }
+        if screenChangeObserver == nil {
+            screenChangeObserver = NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.handleScreenParametersChanged() }
+            }
+        }
+    }
+
+    private func handleScreenParametersChanged() {
+        guard isPresented, let panel else { return }
+        let screenFrame = resolveTargetScreen().visibleFrame
+        let target = Self.computeTargetFrame(screenFrame: screenFrame, panelWidth: settings.panelWidth, heightRatio: 0.92)
+        panel.setFrame(target, display: true, animate: true)
+    }
 
     // MARK: - frame 계산
     static func computeTargetFrame(screenFrame: NSRect, panelWidth: Double, heightRatio: Double) -> NSRect {
