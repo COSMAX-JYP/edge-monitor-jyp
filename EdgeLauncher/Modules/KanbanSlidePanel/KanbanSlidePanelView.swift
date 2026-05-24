@@ -5,6 +5,9 @@ struct KanbanSlidePanelView: View {
     @Bindable var settings: KanbanSlidePanelSettings
     var onRequestClose: () -> Void = {}
 
+    /// 컬럼 폭 드래그 시작 시점의 panelColumnWidth 스냅샷. nil 이면 idle.
+    @State private var columnResizeBase: Double?
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -23,17 +26,17 @@ struct KanbanSlidePanelView: View {
                     viewModel: viewModel,
                     minColumnWidth: CGFloat(settings.panelColumnWidth),
                     maxColumnWidth: CGFloat(settings.panelColumnWidth + 60),
-                    onColumnWidthDrag: { dx in
-                        // scaleEffect 안의 좌표라 화면 픽셀 1px ≠ SwiftUI 좌표 1pt.
-                        // 그러나 DragGesture.translation 은 SwiftUI 내부 좌표 — scaleEffect
-                        // 후 좌표라서 화면 픽셀이 아니라 컨텐츠 좌표(1/s 배). 우리는 화면 픽셀
-                        // delta 를 그대로 column width 의 delta 로 쓰면 자연스럽다.
-                        let scaled = dx * s
-                        let next = settings.panelColumnWidth + Double(scaled)
+                    onColumnWidthDrag: { dx, isEnded in
+                        // drag 시작 시점의 base 를 기억하고 cumulative translation 을 적용.
+                        // scaleEffect 안의 좌표라 화면 픽셀로 보정 (dx * s).
+                        let base = columnResizeBase ?? settings.panelColumnWidth
+                        if columnResizeBase == nil { columnResizeBase = base }
+                        let next = base + Double(dx) * Double(s)
                         settings.panelColumnWidth = max(
                             KanbanSlidePanelSettings.minPanelColumnWidth,
                             min(KanbanSlidePanelSettings.maxPanelColumnWidth, next)
                         )
+                        if isEnded { columnResizeBase = nil }
                     }
                 )
                 .frame(width: proxy.size.width / s, height: proxy.size.height / s, alignment: .topLeading)

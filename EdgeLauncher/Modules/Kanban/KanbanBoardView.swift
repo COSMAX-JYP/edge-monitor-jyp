@@ -6,7 +6,8 @@ struct KanbanBoardView: View {
     var minColumnWidth: CGFloat = 420
     var maxColumnWidth: CGFloat = 560
     /// 컬럼 우측 가장자리 드래그로 컬럼 폭을 사용자 조절 가능. nil 이면 핸들 미표시.
-    var onColumnWidthDrag: ((CGFloat) -> Void)? = nil
+    /// translation 은 drag 시작점으로부터의 누적 width, isEnded 는 onEnded 신호.
+    var onColumnWidthDrag: ((CGFloat, Bool) -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
 
     private let columnSpacing: CGFloat = 12
