@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct BoardEditorSheet: View {
     let initial: KanbanBoard
@@ -155,6 +156,35 @@ extension Color {
     }
 }
 
+/// NSColorWell 을 SwiftUI 로 노출. 클릭 시 macOS NSColorPanel 자동 표시 — NSPanel
+/// 안에서도 동작. 색 변경은 NSColorWell.action 으로 binding 에 반영.
+struct NativeColorWell: NSViewRepresentable {
+    @Binding var selection: Color
+
+    func makeNSView(context: Context) -> NSColorWell {
+        let well = NSColorWell()
+        well.color = NSColor(selection)
+        well.target = context.coordinator
+        well.action = #selector(Coordinator.colorChanged(_:))
+        return well
+    }
+
+    func updateNSView(_ nsView: NSColorWell, context: Context) {
+        let desired = NSColor(selection)
+        if nsView.color != desired { nsView.color = desired }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject {
+        var parent: NativeColorWell
+        init(_ parent: NativeColorWell) { self.parent = parent }
+        @objc func colorChanged(_ sender: NSColorWell) {
+            parent.selection = Color(nsColor: sender.color)
+        }
+    }
+}
+
 extension Color {
     /// SwiftUI ColorPicker 결과를 "#RRGGBB" 16진 문자열로 변환.
     /// 알파 채널은 무시하고 sRGB 8-bit 로 라운드.
@@ -229,18 +259,19 @@ struct KanbanColorEditorSheet: View {
 
                 HStack(spacing: 10) {
                     Text("커스텀").font(.appFootnote).foregroundStyle(.secondary)
-                    // 네이티브 ColorPicker — 마우스로 색상환/스포이드/SwiftUI 의 색상 입력기.
-                    ColorPicker("",
-                                selection: Binding(
-                                    get: { Color.fromHex(colorHex) ?? .accentColor },
-                                    set: { newColor in
-                                        if let hex = newColor.toHex() { colorHex = hex }
-                                    }
-                                ),
-                                supportsOpacity: false)
-                        .labelsHidden()
-                        .disabled(usesDefault)
-                        .opacity(usesDefault ? 0.45 : 1)
+                    // SwiftUI ColorPicker 가 NSPanel(.nonactivatingPanel) 안에서 native
+                    // NSColorPanel 을 못 띄우는 경우가 있어 NSColorWell 직접 사용.
+                    NativeColorWell(
+                        selection: Binding(
+                            get: { Color.fromHex(colorHex) ?? .accentColor },
+                            set: { newColor in
+                                if let hex = newColor.toHex() { colorHex = hex }
+                            }
+                        )
+                    )
+                    .frame(width: 36, height: 24)
+                    .disabled(usesDefault)
+                    .opacity(usesDefault ? 0.45 : 1)
                     Spacer()
                 }
             }
