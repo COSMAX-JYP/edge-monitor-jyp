@@ -224,6 +224,8 @@ private struct ColumnResizeHandleRepresentable: NSViewRepresentable {
 final class ColumnResizeHandleNSView: NSView {
     var onWidthDrag: ((CGFloat, Bool) -> Void)?
     private var startScreenX: CGFloat = 0
+    private var monitor: Any?
+    private var isDragging = false
 
     override var acceptsFirstResponder: Bool { true }
 
@@ -232,24 +234,62 @@ final class ColumnResizeHandleNSView: NSView {
         addCursorRect(bounds, cursor: .resizeLeftRight)
     }
 
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window != nil { installMonitor() } else { removeMonitor() }
+    }
+
+    deinit { removeMonitor() }
+
+    /// NSEvent.localMonitor 으로 NSPanel 안 모든 mouse event 를 SwiftUI tree 와 무관하게
+    /// 가로챈다. ScrollView native pan / scaleEffect hit-test / .onDrop 어느 것도 우리보다
+    /// 먼저 받지 못한다.
+    private func installMonitor() {
+        guard monitor == nil else { return }
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp]) { [weak self] event in
+            guard let self else { return event }
+            guard let win = self.window, event.window === win else { return event }
+            switch event.type {
+            case .leftMouseDown:
+                if self.containsEvent(event) {
+                    self.isDragging = true
+                    self.startScreenX = self.screenX(for: event)
+                    return nil
+                }
+                return event
+            case .leftMouseDragged:
+                if self.isDragging {
+                    let dx = self.screenX(for: event) - self.startScreenX
+                    self.onWidthDrag?(dx, false)
+                    return nil
+                }
+                return event
+            case .leftMouseUp:
+                if self.isDragging {
+                    let dx = self.screenX(for: event) - self.startScreenX
+                    self.onWidthDrag?(dx, true)
+                    self.isDragging = false
+                    return nil
+                }
+                return event
+            default: return event
+            }
+        }
+    }
+
+    private func removeMonitor() {
+        if let m = monitor { NSEvent.removeMonitor(m); monitor = nil }
+    }
+
+    /// event 좌표가 self 의 윈도우 좌표 frame 안인지.
+    private func containsEvent(_ event: NSEvent) -> Bool {
+        let myFrameInWindow = self.convert(self.bounds, to: nil)
+        return myFrameInWindow.contains(event.locationInWindow)
+    }
+
     private func screenX(for event: NSEvent) -> CGFloat {
-        guard let window else { return event.locationInWindow.x }
-        let p = window.convertPoint(toScreen: event.locationInWindow)
-        return p.x
-    }
-
-    override func mouseDown(with event: NSEvent) {
-        startScreenX = screenX(for: event)
-    }
-
-    override func mouseDragged(with event: NSEvent) {
-        let dx = screenX(for: event) - startScreenX
-        onWidthDrag?(dx, false)
-    }
-
-    override func mouseUp(with event: NSEvent) {
-        let dx = screenX(for: event) - startScreenX
-        onWidthDrag?(dx, true)
+        guard let win = window else { return event.locationInWindow.x }
+        return win.convertPoint(toScreen: event.locationInWindow).x
     }
 }
 

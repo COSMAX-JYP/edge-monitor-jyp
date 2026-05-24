@@ -8,6 +8,11 @@ struct KanbanSlidePanelView: View {
     /// 컬럼 폭 드래그 시작 시점의 panelColumnWidth 스냅샷. nil 이면 idle.
     @State private var columnResizeBase: Double?
 
+    /// settings.panelColumnWidth 가 UserDefaults backing computed property 라
+    /// @Observable 자동 추적이 안 된다 → SwiftUI body 재계산 안 일어남.
+    /// @State mirror 로 실시간 반영. drag 시 두 값 모두 갱신.
+    @State private var columnWidthMirror: Double?
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -22,24 +27,21 @@ struct KanbanSlidePanelView: View {
             // 폰트가 시각적으로 줄어든 효과.
             GeometryReader { proxy in
                 let s = slidePanelContentScale
+                let effectiveWidth = columnWidthMirror ?? settings.panelColumnWidth
                 KanbanBoardView(
                     viewModel: viewModel,
-                    minColumnWidth: CGFloat(settings.panelColumnWidth),
-                    maxColumnWidth: CGFloat(settings.panelColumnWidth + 60),
+                    minColumnWidth: CGFloat(effectiveWidth),
+                    maxColumnWidth: CGFloat(effectiveWidth + 60),
                     onColumnWidthDrag: { dx, isEnded in
-                        // AppKit NSView 가 screen 좌표 dx 를 직접 보내므로 scaleEffect
-                        // 보정 불필요. 시각 폭(scale 후)이 핸들의 logical width(컨텐츠 좌표)
-                        // 보다 작아 보일 뿐, drag delta 는 실제 마우스 화면 이동량.
                         let base = columnResizeBase ?? settings.panelColumnWidth
                         if columnResizeBase == nil { columnResizeBase = base }
-                        // 사용자가 마우스 100pt 움직이면 컬럼이 100pt 변화하면 너무 빠름 —
-                        // scale 만큼 곱해서 시각 변화율이 1:1 이 되게 (화면에서 보이는 핸들
-                        // 위치 변화 = 실제 컬럼 변화).
                         let next = base + Double(dx) / Double(s)
-                        settings.panelColumnWidth = max(
+                        let clamped = max(
                             KanbanSlidePanelSettings.minPanelColumnWidth,
                             min(KanbanSlidePanelSettings.maxPanelColumnWidth, next)
                         )
+                        settings.panelColumnWidth = clamped
+                        columnWidthMirror = clamped  // SwiftUI body 즉시 재계산
                         if isEnded { columnResizeBase = nil }
                     }
                 )
@@ -47,13 +49,16 @@ struct KanbanSlidePanelView: View {
                 .scaleEffect(s, anchor: .topLeading)
             }
             .background(.ultraThinMaterial)
+            .onAppear {
+                columnWidthMirror = settings.panelColumnWidth
+            }
         }
         .background(.thinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    /// 0.624 = AppTypography 18pt → 11.2pt 환산. 사용자 요청 "+20%" 반영
-    /// (0.52 → 0.52 × 1.20 = 0.624).
+    /// 0.624 = AppTypography 18pt → 11.2pt 환산. drag 는 NSEvent.localMonitor 가
+    /// 처리하므로 scaleEffect 와 무관.
     private var slidePanelContentScale: CGFloat { 0.624 }
 
     private var header: some View {
@@ -73,22 +78,26 @@ struct KanbanSlidePanelView: View {
         .padding(.vertical, 8)
     }
 
-    /// 패널 헤더에서 즉시 컬럼 폭 조정 + 자동 저장.
+    /// 패널 헤더에서 즉시 컬럼 폭 조정 + 자동 저장. settings 와 mirror 동시 갱신.
     private var columnWidthControl: some View {
         HStack(spacing: 4) {
             Button {
-                settings.panelColumnWidth = max(
+                let next = max(
                     KanbanSlidePanelSettings.minPanelColumnWidth,
                     settings.panelColumnWidth - 20
                 )
+                settings.panelColumnWidth = next
+                columnWidthMirror = next
             } label: { Image(systemName: "minus.rectangle") }
             .help("컬럼 좁게")
 
             Button {
-                settings.panelColumnWidth = min(
+                let next = min(
                     KanbanSlidePanelSettings.maxPanelColumnWidth,
                     settings.panelColumnWidth + 20
                 )
+                settings.panelColumnWidth = next
+                columnWidthMirror = next
             } label: { Image(systemName: "plus.rectangle") }
             .help("컬럼 넓게")
         }
