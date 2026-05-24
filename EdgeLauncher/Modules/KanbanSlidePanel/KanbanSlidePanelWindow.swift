@@ -22,6 +22,10 @@ final class KanbanSlidePanelWindow: NSPanel {
         self.standardWindowButton(.closeButton)?.isHidden = true
         self.standardWindowButton(.miniaturizeButton)?.isHidden = true
         self.standardWindowButton(.zoomButton)?.isHidden = true
+
+        // 사용자가 좌측 / 상하 가장자리 드래그로 자유 resize.
+        self.minSize = NSSize(width: KanbanSlidePanelSettings.minPanelWidth, height: 320)
+        self.maxSize = NSSize(width: KanbanSlidePanelSettings.maxPanelWidth, height: .infinity)
     }
 
     override var canBecomeKey: Bool { true }

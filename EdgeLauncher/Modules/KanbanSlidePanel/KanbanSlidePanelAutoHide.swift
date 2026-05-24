@@ -105,6 +105,15 @@ final class KanbanSlidePanelAutoHide: NSObject, NSWindowDelegate {
     /// 2. `NSApp.isActive == true` (앱 비활성 전환 중이면 skip)
     /// 3. 최근 show 애니메이션으로부터 grace period (0.25s) 경과
     /// 4. 윈도우가 실제로 visible
+    /// 사용자가 가장자리 드래그로 패널 크기를 조정하면 settings.panelWidth 에 영속화.
+    /// 다음 호출에서 같은 폭으로 슬라이드 인.
+    nonisolated func windowDidResize(_ notification: Notification) {
+        Task { @MainActor in
+            guard let win = notification.object as? NSWindow else { return }
+            self.settings.panelWidth = Double(win.frame.width)
+        }
+    }
+
     nonisolated func windowDidResignKey(_ notification: Notification) {
         Task { @MainActor in
             if self.shouldSuspend() { return }

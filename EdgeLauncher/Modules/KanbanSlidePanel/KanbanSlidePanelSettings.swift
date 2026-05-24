@@ -34,8 +34,8 @@ enum SlidePanelDisplayPolicy: Equatable {
 final class KanbanSlidePanelSettings {
     static let defaultHotKeyCode: Int = kVK_ANSI_K
     static let defaultHotKeyModifiers: UInt32 = UInt32(cmdKey | shiftKey)
-    static let minPanelWidth: Double = 320
-    static let maxPanelWidth: Double = 720
+    static let minPanelWidth: Double = 280
+    static let maxPanelWidth: Double = 1200
     static let minAnimationDuration: Double = 0.10
     static let maxAnimationDuration: Double = 0.40
 
