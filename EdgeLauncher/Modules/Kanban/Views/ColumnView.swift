@@ -39,20 +39,27 @@ struct ColumnView: View {
                     .frame(height: hasCustomColor ? 7 : 4)
             }
             header(style: style, accent: accent)
-            // 3:7 분할 — 위 30% 영역 + 가로 divider + 아래 70% 영역. 사용자가 카드 메뉴
-            // 의 "위/아래로 이동" 으로 영역 이동.
-            VStack(spacing: 0) {
-                zoneArea(
-                    cards: column.cards.filter { $0.isUpper },
-                    isUpper: true,
-                    contentHeight: max(0, (height - 50) * 0.3)
-                )
-                Divider().background(Color.primary.opacity(0.15))
-                zoneArea(
-                    cards: column.cards.filter { !$0.isUpper },
-                    isUpper: false,
-                    contentHeight: max(0, (height - 50) * 0.7)
-                )
+            // 3:7 분할 — 위 30% 영역 + 가로 divider + 아래 70% 영역. GeometryReader 로
+            // 정확한 비율 강제. ScrollView 가 자연 height 로 늘어나는 SwiftUI 동작 회피.
+            GeometryReader { proxy in
+                let totalH = proxy.size.height
+                let dividerH: CGFloat = 1
+                let usable = max(0, totalH - dividerH)
+                let upperH = usable * 0.3
+                let lowerH = usable * 0.7
+                VStack(spacing: 0) {
+                    zoneArea(
+                        cards: column.cards.filter { $0.isUpper },
+                        isUpper: true
+                    )
+                    .frame(height: upperH)
+                    Divider().background(Color.primary.opacity(0.15))
+                    zoneArea(
+                        cards: column.cards.filter { !$0.isUpper },
+                        isUpper: false
+                    )
+                    .frame(height: lowerH)
+                }
             }
             .frame(maxHeight: .infinity)
             .background(
@@ -102,36 +109,17 @@ struct ColumnView: View {
         }
     }
 
-    /// 3:7 영역. 카드 목록 + 빈 영역 tap-to-add 가 그대로 동작.
+    /// 3:7 영역. 카드 목록 + 빈 영역 tap-to-add + drop target 시 outline 강조.
     @ViewBuilder
-    private func zoneArea(cards: [KanbanCard], isUpper: Bool, contentHeight: CGFloat) -> some View {
-        ScrollView(showsIndicators: false) {
-            ZStack(alignment: .top) {
-                Color.clear
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        viewModel.startNewCard(in: column.id, isUpper: isUpper)
-                    }
-                VStack(spacing: isSlidePadStyle ? 4 : 12) {
-                    ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
-                        DraggableCardRow(
-                            boardId: board.id,
-                            columnId: column.id,
-                            columnName: column.name,
-                            index: index,
-                            card: card,
-                            labels: board.labels,
-                            viewModel: viewModel
-                        )
-                    }
-                    Spacer(minLength: 0)
-                }
-                .padding(isSlidePadStyle ? 6 : 12)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            }
-            .frame(minHeight: contentHeight)
-        }
+    private func zoneArea(cards: [KanbanCard], isUpper: Bool) -> some View {
+        ZoneAreaView(
+            cards: cards,
+            isUpper: isUpper,
+            board: board,
+            column: column,
+            viewModel: viewModel,
+            isSlidePadStyle: isSlidePadStyle
+        )
     }
 
     private func header(style: KanbanBoardStyle, accent: Color) -> some View {
@@ -285,6 +273,65 @@ private struct ExternalCardDragModifier: ViewModifier {
                     sourceColumnId: columnId
                 ))
             }
+        }
+    }
+}
+
+/// 위 30% / 아래 70% zone 각각의 wrapper. 카드 목록, tap-to-add, drop target outline.
+private struct ZoneAreaView: View {
+    let cards: [KanbanCard]
+    let isUpper: Bool
+    let board: KanbanBoard
+    let column: KanbanColumn
+    @Bindable var viewModel: KanbanViewModel
+    let isSlidePadStyle: Bool
+
+    @State private var isDropTargeted: Bool = false
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            ZStack(alignment: .top) {
+                Color.clear
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        viewModel.startNewCard(in: column.id, isUpper: isUpper)
+                    }
+                VStack(spacing: isSlidePadStyle ? 4 : 12) {
+                    ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
+                        DraggableCardRow(
+                            boardId: board.id,
+                            columnId: column.id,
+                            columnName: column.name,
+                            index: index,
+                            card: card,
+                            labels: board.labels,
+                            viewModel: viewModel
+                        )
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(isSlidePadStyle ? 6 : 12)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isDropTargeted ? Color.accentColor.opacity(0.08) : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .strokeBorder(isDropTargeted ? Color.accentColor : Color.clear, lineWidth: 2)
+                .animation(.easeInOut(duration: 0.12), value: isDropTargeted)
+        )
+        .onDrop(of: [.kanbanCardRef, .plainText], isTargeted: $isDropTargeted) { providers in
+            viewModel.handleDrop(
+                providers: providers,
+                toColumn: column.id,
+                toIndex: cards.count,
+                toUpper: isUpper
+            )
         }
     }
 }

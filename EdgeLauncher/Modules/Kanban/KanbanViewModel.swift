@@ -272,7 +272,7 @@ final class KanbanViewModel {
         return provider
     }
 
-    func handleDrop(providers: [NSItemProvider], toColumn: UUID, toIndex: Int) -> Bool {
+    func handleDrop(providers: [NSItemProvider], toColumn: UUID, toIndex: Int, toUpper: Bool? = nil) -> Bool {
         if let provider = providers.first(where: {
             $0.hasItemConformingToTypeIdentifier(UTType.kanbanCardRef.identifier)
         }) {
@@ -281,7 +281,7 @@ final class KanbanViewModel {
                       let data,
                       let ref = try? JSONDecoder().decode(KanbanCardRef.self, from: data) else { return }
                 Task { @MainActor in
-                    _ = self.handleDrop(ref: ref, toColumn: toColumn, toIndex: toIndex)
+                    _ = self.handleDrop(ref: ref, toColumn: toColumn, toIndex: toIndex, toUpper: toUpper)
                 }
             }
             return true
@@ -293,7 +293,7 @@ final class KanbanViewModel {
                       let string = item as? String,
                       let ref = KanbanDragPayload.decodeText(string) else { return }
                 Task { @MainActor in
-                    _ = self.handleDrop(ref: ref, toColumn: toColumn, toIndex: toIndex)
+                    _ = self.handleDrop(ref: ref, toColumn: toColumn, toIndex: toIndex, toUpper: toUpper)
                 }
             }
             return true
@@ -302,11 +302,23 @@ final class KanbanViewModel {
         return false
     }
 
-    func handleDrop(ref: KanbanCardRef, toColumn: UUID, toIndex: Int) -> Bool {
+    func handleDrop(ref: KanbanCardRef, toColumn: UUID, toIndex: Int, toUpper: Bool? = nil) -> Bool {
         guard let board = activeBoard, ref.boardId == board.id else { return false }
         // 미리알림 카드는 store 에 존재하지 않으므로 이동 불가.
         if reminderBridge.isReminderCard(ref.cardId) { return false }
         store.moveCard(cardId: ref.cardId, fromColumn: ref.sourceColumnId, toColumn: toColumn, toIndex: toIndex)
+        // zone(상/하) 변경 요청이 있으면 같이 적용.
+        if let toUpper {
+            if let (_, columnId) = store.findColumnId(forCard: ref.cardId),
+               let board = store.data.boards.first(where: { $0.id == ref.boardId }),
+               let column = board.columns.first(where: { $0.id == columnId }),
+               let card = column.cards.first(where: { $0.id == ref.cardId }),
+               card.isUpper != toUpper {
+                var updated = card
+                updated.isUpper = toUpper
+                store.updateCard(updated)
+            }
+        }
         return true
     }
 
