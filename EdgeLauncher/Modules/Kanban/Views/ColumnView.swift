@@ -14,6 +14,7 @@ struct ColumnView: View {
     var onWidthDrag: ((CGFloat, Bool) -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isSlidePadStyle) private var isSlidePadStyle
+    @Environment(\.slidePadColorEditorPresenter) private var slidePadColorEditorPresenter
 
     @State private var renameValue: String = ""
     @State private var isRenaming: Bool = false
@@ -150,7 +151,11 @@ struct ColumnView: View {
             Menu {
                 Button("이름 변경", action: beginRename)
                 Button {
-                    isEditingColor = true
+                    if let presenter = slidePadColorEditorPresenter {
+                        presenter(column.id, column.colorHex)
+                    } else {
+                        isEditingColor = true
+                    }
                 } label: {
                     Label("색상 변경", systemImage: "paintpalette")
                 }

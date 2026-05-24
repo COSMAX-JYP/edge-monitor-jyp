@@ -147,16 +147,11 @@ final class KanbanSlidePanelController {
     }
 
     // MARK: - AutoHide 통합
+    /// 사용자 요청: 단축키(Cmd+Shift+K) 토글만으로 펼침/접힘. 외부 클릭 / Esc /
+    /// windowDidResignKey 자동 숨김 모두 비활성. 헤더의 닫기 버튼은 controller.hide()
+    /// 를 직접 호출하므로 따로 유지.
     fileprivate func ensureAutoHideCreated() {
-        guard autoHide == nil else { return }
-        guard let panel, let vm = panelViewModel else { return }
-        let ah = KanbanSlidePanelAutoHide(viewModel: vm, settings: settings, panelFrameProvider: { [weak panel] in
-            panel?.frame ?? .zero
-        })
-        ah.onHideRequested = { [weak self] in self?.hide() }
-        ah.onEscapeRequested = { [weak self] in self?.hide() }
-        panel.delegate = ah
-        self.autoHide = ah
+        // 의도적으로 빈 함수 — autoHide 인스턴스 생성 안 함.
     }
 
     // MARK: - 내부

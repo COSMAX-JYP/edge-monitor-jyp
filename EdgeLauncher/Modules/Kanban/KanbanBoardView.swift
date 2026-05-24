@@ -11,6 +11,14 @@ extension EnvironmentValues {
         get { self[IsSlidePadStyleKey.self] }
         set { self[IsSlidePadStyleKey.self] = newValue }
     }
+    var slidePadColorEditorPresenter: ((UUID, String?) -> Void)? {
+        get { self[SlidePadColorEditorPresenterKey.self] }
+        set { self[SlidePadColorEditorPresenterKey.self] = newValue }
+    }
+}
+
+private struct SlidePadColorEditorPresenterKey: EnvironmentKey {
+    static let defaultValue: ((UUID, String?) -> Void)? = nil
 }
 
 struct KanbanBoardView: View {

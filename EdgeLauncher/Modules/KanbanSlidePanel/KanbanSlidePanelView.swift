@@ -23,6 +23,11 @@ struct KanbanSlidePanelView: View {
 
     private var effectiveDarkMode: Bool { darkModeMirror ?? settings.darkMode }
 
+    /// 컬럼 색 sheet hijack — SlidePad 패널 전체 영역에 큰 sheet 띄움.
+    /// ColumnView 의 좁은 frame 에 잘리지 않게 함.
+    @State private var editingColorColumnId: UUID?
+    @State private var editingColorInitialHex: String?
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -83,6 +88,41 @@ struct KanbanSlidePanelView: View {
         .preferredColorScheme(effectiveDarkMode ? .dark : .light)
         .environment(\.colorScheme, effectiveDarkMode ? .dark : .light)
         .environment(\.isSlidePadStyle, true)  // Compact Dense — outline/shadow 약화, spacing 압축
+        .environment(\.slidePadColorEditorPresenter, { columnId, hex in
+            editingColorInitialHex = hex
+            editingColorColumnId = columnId
+        })
+        .overlay {
+            if let cid = editingColorColumnId {
+                ZStack {
+                    Color.black.opacity(0.45)
+                        .ignoresSafeArea()
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            editingColorColumnId = nil
+                            editingColorInitialHex = nil
+                        }
+                    KanbanColorEditorSheet(
+                        title: (viewModel.activeBoard?.columns.first(where: { $0.id == cid })?.name ?? "") + " 색상",
+                        initialColorHex: editingColorInitialHex,
+                        onSave: { newHex in
+                            viewModel.store.setColumnColor(cid, colorHex: newHex)
+                            editingColorColumnId = nil
+                            editingColorInitialHex = nil
+                        },
+                        onCancel: {
+                            editingColorColumnId = nil
+                            editingColorInitialHex = nil
+                        }
+                    )
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .shadow(color: .black.opacity(0.4), radius: 30, y: 14)
+                }
+                .zIndex(99999)
+                .transition(.opacity)
+            }
+        }
     }
 
     /// 0.624 = AppTypography 18pt → 11.2pt 환산. drag 는 NSEvent.localMonitor 가
