@@ -35,11 +35,13 @@ final class KanbanSlidePanelSettings {
     static let defaultHotKeyCode: Int = kVK_ANSI_K
     static let defaultHotKeyModifiers: UInt32 = UInt32(cmdKey | shiftKey)
     static let minPanelWidth: Double = 280
-    static let maxPanelWidth: Double = 1200
+    /// 화면 전체보다 살짝 큰 상한 — 사용자가 자유롭게 늘려도 잘리지 않는다.
+    /// NSPanel 자체가 화면 밖으로 나가지 않게 OS 가 보호하므로 실제 표시 폭은 자연 제한.
+    static let maxPanelWidth: Double = 5000
     static let minPanelHeight: Double = 320
-    static let maxPanelHeight: Double = 2000
+    static let maxPanelHeight: Double = 5000
     static let minPanelColumnWidth: Double = 180
-    static let maxPanelColumnWidth: Double = 420
+    static let maxPanelColumnWidth: Double = 800
     static let minAnimationDuration: Double = 0.10
     static let maxAnimationDuration: Double = 0.40
 

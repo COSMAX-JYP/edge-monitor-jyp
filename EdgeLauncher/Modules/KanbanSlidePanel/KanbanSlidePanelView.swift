@@ -41,6 +41,7 @@ struct KanbanSlidePanelView: View {
         HStack(spacing: 8) {
             BoardPickerView(viewModel: viewModel)
             Spacer()
+            columnWidthControl
             Button { settings.isPinned.toggle() } label: {
                 Image(systemName: settings.isPinned ? "pin.fill" : "pin")
             }
@@ -51,5 +52,26 @@ struct KanbanSlidePanelView: View {
         .buttonStyle(.borderless)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+
+    /// 패널 헤더에서 즉시 컬럼 폭 조정 + 자동 저장.
+    private var columnWidthControl: some View {
+        HStack(spacing: 4) {
+            Button {
+                settings.panelColumnWidth = max(
+                    KanbanSlidePanelSettings.minPanelColumnWidth,
+                    settings.panelColumnWidth - 20
+                )
+            } label: { Image(systemName: "minus.rectangle") }
+            .help("컬럼 좁게")
+
+            Button {
+                settings.panelColumnWidth = min(
+                    KanbanSlidePanelSettings.maxPanelColumnWidth,
+                    settings.panelColumnWidth + 20
+                )
+            } label: { Image(systemName: "plus.rectangle") }
+            .help("컬럼 넓게")
+        }
     }
 }
