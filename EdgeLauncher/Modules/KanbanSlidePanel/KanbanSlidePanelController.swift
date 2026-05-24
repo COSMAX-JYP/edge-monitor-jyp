@@ -17,6 +17,7 @@ final class KanbanSlidePanelController {
     private var hostingView: NSHostingView<KanbanSlidePanelView>?
     private var panelViewModel: KanbanViewModel?
     private var animationToken: Int = 0
+    private var autoHide: KanbanSlidePanelAutoHide?
 
     init(store: KanbanStore, settings: KanbanSlidePanelSettings) {
         self.store = store
@@ -84,6 +85,19 @@ final class KanbanSlidePanelController {
         return f
     }
 
+    // MARK: - AutoHide 통합
+    fileprivate func ensureAutoHideCreated() {
+        guard autoHide == nil else { return }
+        guard let panel, let vm = panelViewModel else { return }
+        let ah = KanbanSlidePanelAutoHide(viewModel: vm, settings: settings, panelFrameProvider: { [weak panel] in
+            panel?.frame ?? .zero
+        })
+        ah.onHideRequested = { [weak self] in self?.hide() }
+        ah.onEscapeRequested = { [weak self] in self?.hide() }
+        panel.delegate = ah
+        self.autoHide = ah
+    }
+
     // MARK: - 내부
     fileprivate func ensurePanelCreated() {
         guard panel == nil else { return }
@@ -129,7 +143,12 @@ final class KanbanSlidePanelController {
             ctx.allowsImplicitAnimation = true
             panel.animator().setFrame(target, display: true)
             panel.animator().alphaValue = 1
-        }, completionHandler: completion)
+        }, completionHandler: { [weak self] in
+            self?.ensureAutoHideCreated()
+            self?.autoHide?.lastShowTimestamp = Date()
+            self?.autoHide?.install()
+            completion()
+        })
     }
 
     private func performHideAnimation(completion: @escaping () -> Void) {
@@ -143,6 +162,7 @@ final class KanbanSlidePanelController {
             panel.animator().setFrame(outFrame, display: true)
             panel.animator().alphaValue = 0
         }, completionHandler: { [weak self] in
+            self?.autoHide?.uninstall()
             self?.panel?.orderOut(nil)
             completion()
         })
