@@ -7,6 +7,9 @@ struct ColumnView: View {
     let width: CGFloat
     let height: CGFloat
     @Bindable var viewModel: KanbanViewModel
+    /// SlidePad 처럼 호출 측이 컬럼 폭을 사용자 드래그로 갱신하고 싶을 때 주입.
+    /// nil 이면 우측 가장자리 핸들이 표시되지 않는다 (기본 KanbanBoardView 동작 보존).
+    var onWidthDrag: ((CGFloat) -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var renameValue: String = ""
@@ -69,6 +72,28 @@ struct ColumnView: View {
             }
         }
         .frame(width: width, height: height)
+        .overlay(alignment: .trailing) {
+            if let onWidthDrag {
+                // 우측 가장자리에 8pt 폭 invisible 드래그 핸들 — 시각적으로 미세한 강조선만,
+                // 호버 시 cursor 가 resizeLeftRight 로 바뀌고 좌우 드래그로 컬럼 폭 갱신.
+                Rectangle()
+                    .fill(Color.white.opacity(0.001))
+                    .frame(width: 8)
+                    .overlay(alignment: .center) {
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(Color.primary.opacity(0.15))
+                            .frame(width: 2, height: 28)
+                    }
+                    .contentShape(Rectangle())
+                    .onHover { hovering in
+                        if hovering { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
+                    }
+                    .gesture(
+                        DragGesture(minimumDistance: 1)
+                            .onChanged { value in onWidthDrag(value.translation.width) }
+                    )
+            }
+        }
         .dismissiblePopup(isPresented: $isEditingColor) {
             KanbanColorEditorSheet(
                 title: "\(column.name) 색상",

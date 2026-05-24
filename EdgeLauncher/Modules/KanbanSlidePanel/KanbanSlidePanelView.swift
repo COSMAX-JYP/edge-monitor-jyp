@@ -22,7 +22,19 @@ struct KanbanSlidePanelView: View {
                 KanbanBoardView(
                     viewModel: viewModel,
                     minColumnWidth: CGFloat(settings.panelColumnWidth),
-                    maxColumnWidth: CGFloat(settings.panelColumnWidth + 60)
+                    maxColumnWidth: CGFloat(settings.panelColumnWidth + 60),
+                    onColumnWidthDrag: { dx in
+                        // scaleEffect 안의 좌표라 화면 픽셀 1px ≠ SwiftUI 좌표 1pt.
+                        // 그러나 DragGesture.translation 은 SwiftUI 내부 좌표 — scaleEffect
+                        // 후 좌표라서 화면 픽셀이 아니라 컨텐츠 좌표(1/s 배). 우리는 화면 픽셀
+                        // delta 를 그대로 column width 의 delta 로 쓰면 자연스럽다.
+                        let scaled = dx * s
+                        let next = settings.panelColumnWidth + Double(scaled)
+                        settings.panelColumnWidth = max(
+                            KanbanSlidePanelSettings.minPanelColumnWidth,
+                            min(KanbanSlidePanelSettings.maxPanelColumnWidth, next)
+                        )
+                    }
                 )
                 .frame(width: proxy.size.width / s, height: proxy.size.height / s, alignment: .topLeading)
                 .scaleEffect(s, anchor: .topLeading)
@@ -33,9 +45,9 @@ struct KanbanSlidePanelView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    /// 0.52 = AppTypography 18pt → 9.4pt 환산. 사용자 요청 "전체 폰트 -20%" 반영
-    /// (이전 0.65 에서 0.65 × 0.80 = 0.52).
-    private var slidePanelContentScale: CGFloat { 0.52 }
+    /// 0.624 = AppTypography 18pt → 11.2pt 환산. 사용자 요청 "+20%" 반영
+    /// (0.52 → 0.52 × 1.20 = 0.624).
+    private var slidePanelContentScale: CGFloat { 0.624 }
 
     private var header: some View {
         HStack(spacing: 8) {

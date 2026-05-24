@@ -5,6 +5,8 @@ struct KanbanBoardView: View {
     /// 호출 측에서 override 가능 — SlidePad 처럼 좁은 컨테이너에서는 더 작은 값 사용.
     var minColumnWidth: CGFloat = 420
     var maxColumnWidth: CGFloat = 560
+    /// 컬럼 우측 가장자리 드래그로 컬럼 폭을 사용자 조절 가능. nil 이면 핸들 미표시.
+    var onColumnWidthDrag: ((CGFloat) -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
 
     private let columnSpacing: CGFloat = 12
@@ -124,7 +126,8 @@ struct KanbanBoardView: View {
                             column: column,
                             width: columnWidth(forVisible: max(columns.count, 1), in: width),
                             height: height,
-                            viewModel: viewModel
+                            viewModel: viewModel,
+                            onWidthDrag: onColumnWidthDrag
                         )
                     }
                     AddColumnTile(width: columnWidth(forVisible: max(columns.count, 1), in: width)) {
