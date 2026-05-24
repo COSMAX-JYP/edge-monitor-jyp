@@ -73,7 +73,7 @@ struct ColumnView: View {
                 isSlidePadStyle
                     ? (hasCustomColor
                         // 사용자 요청: 컬럼 색상에 따라 거의 반투명한 매우 옅은 톤.
-                        ? AnyShapeStyle(accent.opacity(0.04))
+                        ? AnyShapeStyle(accent.opacity(0.02))
                         : AnyShapeStyle(Color.white.opacity(0.03)))
                     : AnyShapeStyle(style.columnBackground(accent: accent, hasCustomColor: hasCustomColor))
             )
