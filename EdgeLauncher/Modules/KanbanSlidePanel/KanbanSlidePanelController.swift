@@ -1,6 +1,22 @@
 import AppKit
 import SwiftUI
 
+/// autoHide 비활성화로 NSWindowDelegate 가 없어진 후에도 사용자가 가장자리 드래그로
+/// 조정한 패널 width/height 를 settings 에 영속화하기 위한 경량 delegate.
+@MainActor
+final class _SlidePanelResizeDelegate: NSObject, NSWindowDelegate {
+    let settings: KanbanSlidePanelSettings
+    init(settings: KanbanSlidePanelSettings) { self.settings = settings }
+
+    nonisolated func windowDidResize(_ notification: Notification) {
+        Task { @MainActor in
+            guard let win = notification.object as? NSWindow else { return }
+            self.settings.panelWidth = Double(win.frame.width)
+            self.settings.panelHeight = Double(win.frame.height)
+        }
+    }
+}
+
 @MainActor
 final class KanbanSlidePanelController {
     enum State: Equatable { case hidden, animatingIn, shown, animatingOut }
@@ -18,6 +34,7 @@ final class KanbanSlidePanelController {
     private var panelViewModel: KanbanViewModel?
     private var animationToken: Int = 0
     private var autoHide: KanbanSlidePanelAutoHide?
+    private var resizeDelegate: _SlidePanelResizeDelegate?
     private var wakeObserver: NSObjectProtocol?
     private var screenChangeObserver: NSObjectProtocol?
 
@@ -73,18 +90,21 @@ final class KanbanSlidePanelController {
 
     func warmUp() { ensurePanelCreated() }
 
-    /// 현재 패널이 표시된 디스플레이의 visibleFrame.width 를 읽어 패널 폭을 그 값으로 갱신.
-    /// 패널이 떠 있으면 즉시 setFrame, 아니면 settings 만 갱신 (다음 호출에 적용).
+    /// 현재 패널이 표시된 디스플레이의 visibleFrame.width / height 를 읽어 패널을 화면 폭+높이로
+    /// 최대화. 패널이 떠 있으면 즉시 setFrame, 아니면 settings 만 갱신.
     func resizePanelToFullScreenWidth() {
         let screen = resolveTargetScreen()
         let width = Double(screen.visibleFrame.width)
+        let height = Double(screen.visibleFrame.height)
         settings.panelWidth = width
+        settings.panelHeight = height
         if let panel, isPresented {
-            let target = Self.computeTargetFrame(
-                screenFrame: screen.visibleFrame,
-                panelWidth: width,
-                panelHeight: settings.panelHeight,
-                heightRatio: 0.92
+            // height 가 visibleFrame.height 이므로 y origin 도 visibleFrame.minY 로.
+            let target = NSRect(
+                x: screen.visibleFrame.maxX - CGFloat(width),
+                y: screen.visibleFrame.minY,
+                width: CGFloat(width),
+                height: CGFloat(height)
             )
             panel.setFrame(target, display: true, animate: true)
         }
@@ -151,7 +171,12 @@ final class KanbanSlidePanelController {
     /// windowDidResignKey 자동 숨김 모두 비활성. 헤더의 닫기 버튼은 controller.hide()
     /// 를 직접 호출하므로 따로 유지.
     fileprivate func ensureAutoHideCreated() {
-        // 의도적으로 빈 함수 — autoHide 인스턴스 생성 안 함.
+        // autoHide 자체는 비활성. 다만 사용자 드래그 resize 의 width/height 영속화는
+        // 살아 있어야 하므로 경량 NSWindowDelegate 만 할당.
+        guard resizeDelegate == nil, let panel else { return }
+        let delegate = _SlidePanelResizeDelegate(settings: settings)
+        panel.delegate = delegate
+        resizeDelegate = delegate
     }
 
     // MARK: - 내부
