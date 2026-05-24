@@ -45,6 +45,16 @@ struct EdgeLauncherApp: App {
                 }
                 .keyboardShortcut("r", modifiers: .command)
             }
+
+            // SlidePad: Carbon hotkey 등록 실패 시 fallback. menu shortcut 은 EdgeLauncher
+            // 본체가 키 윈도우일 때만 동작하지만, 다른 앱이 활성일 때는 Carbon hotkey 가
+            // 처리한다.
+            CommandGroup(after: .windowList) {
+                Button("SlidePad 칸반 토글") {
+                    env.slidePanelController.toggle()
+                }
+                .keyboardShortcut("k", modifiers: [.command, .shift])
+            }
         }
 
         Settings {
