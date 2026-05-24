@@ -27,11 +27,15 @@ struct KanbanSlidePanelView: View {
                     minColumnWidth: CGFloat(settings.panelColumnWidth),
                     maxColumnWidth: CGFloat(settings.panelColumnWidth + 60),
                     onColumnWidthDrag: { dx, isEnded in
-                        // drag 시작 시점의 base 를 기억하고 cumulative translation 을 적용.
-                        // scaleEffect 안의 좌표라 화면 픽셀로 보정 (dx * s).
+                        // AppKit NSView 가 screen 좌표 dx 를 직접 보내므로 scaleEffect
+                        // 보정 불필요. 시각 폭(scale 후)이 핸들의 logical width(컨텐츠 좌표)
+                        // 보다 작아 보일 뿐, drag delta 는 실제 마우스 화면 이동량.
                         let base = columnResizeBase ?? settings.panelColumnWidth
                         if columnResizeBase == nil { columnResizeBase = base }
-                        let next = base + Double(dx) * Double(s)
+                        // 사용자가 마우스 100pt 움직이면 컬럼이 100pt 변화하면 너무 빠름 —
+                        // scale 만큼 곱해서 시각 변화율이 1:1 이 되게 (화면에서 보이는 핸들
+                        // 위치 변화 = 실제 컬럼 변화).
+                        let next = base + Double(dx) / Double(s)
                         settings.panelColumnWidth = max(
                             KanbanSlidePanelSettings.minPanelColumnWidth,
                             min(KanbanSlidePanelSettings.maxPanelColumnWidth, next)

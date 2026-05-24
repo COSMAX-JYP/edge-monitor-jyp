@@ -187,30 +187,69 @@ struct KanbanBoardView: View {
     }
 }
 
-/// 컬럼 사이에 놓이는 가는 드래그 핸들. ColumnView 의 onDrop / 내부 ScrollView 영역
-/// 바깥에 sibling 으로 위치하여 horizontal/vertical ScrollView 와 gesture 충돌이 없다.
+/// 컬럼 사이에 놓이는 가는 드래그 핸들. macOS 26 beta 에서 NSScrollView 의 native pan
+/// 이 SwiftUI .gesture 를 일관되게 가로채는 문제(codex 진단)로, AppKit NSView 로 직접
+/// mouseDown/Dragged/Up 처리한다. NSResponder chain 에서 자식 view 가 먼저 받으므로
+/// ScrollView 와 충돌 없음.
 struct KanbanColumnResizeHandle: View {
     let height: CGFloat
     let onWidthDrag: (CGFloat, Bool) -> Void
 
     var body: some View {
-        Rectangle()
-            .fill(Color.clear)
+        ColumnResizeHandleRepresentable(onWidthDrag: onWidthDrag)
             .frame(width: 12, height: height)
             .overlay(
                 RoundedRectangle(cornerRadius: 1)
                     .fill(Color.primary.opacity(0.18))
                     .frame(width: 3, height: 32)
             )
-            .contentShape(Rectangle())
-            .onHover { hovering in
-                if hovering { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in onWidthDrag(value.translation.width, false) }
-                    .onEnded { value in onWidthDrag(value.translation.width, true) }
-            )
+            .allowsHitTesting(true)
+    }
+}
+
+private struct ColumnResizeHandleRepresentable: NSViewRepresentable {
+    let onWidthDrag: (CGFloat, Bool) -> Void
+
+    func makeNSView(context: Context) -> ColumnResizeHandleNSView {
+        let v = ColumnResizeHandleNSView()
+        v.onWidthDrag = onWidthDrag
+        return v
+    }
+
+    func updateNSView(_ nsView: ColumnResizeHandleNSView, context: Context) {
+        nsView.onWidthDrag = onWidthDrag
+    }
+}
+
+final class ColumnResizeHandleNSView: NSView {
+    var onWidthDrag: ((CGFloat, Bool) -> Void)?
+    private var startScreenX: CGFloat = 0
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        addCursorRect(bounds, cursor: .resizeLeftRight)
+    }
+
+    private func screenX(for event: NSEvent) -> CGFloat {
+        guard let window else { return event.locationInWindow.x }
+        let p = window.convertPoint(toScreen: event.locationInWindow)
+        return p.x
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        startScreenX = screenX(for: event)
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        let dx = screenX(for: event) - startScreenX
+        onWidthDrag?(dx, false)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        let dx = screenX(for: event) - startScreenX
+        onWidthDrag?(dx, true)
     }
 }
 
