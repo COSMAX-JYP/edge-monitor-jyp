@@ -7,7 +7,10 @@ struct KanbanBoardView: View {
     var maxColumnWidth: CGFloat = 560
     /// 컬럼 우측 가장자리 드래그로 컬럼 폭을 사용자 조절 가능. nil 이면 핸들 미표시.
     /// translation 은 drag 시작점으로부터의 누적 width, isEnded 는 onEnded 신호.
-    var onColumnWidthDrag: ((CGFloat, Bool) -> Void)? = nil
+    /// 어느 컬럼의 핸들을 드래그하는지 column.id 를 함께 전달한다.
+    var onColumnWidthDrag: ((UUID, CGFloat, Bool) -> Void)? = nil
+    /// 컬럼별 폭 override. nil 이면 자동 균등 분할 (기존 동작).
+    var columnWidthOverride: ((UUID) -> CGFloat?)? = nil
     @Environment(\.colorScheme) private var colorScheme
 
     private let columnSpacing: CGFloat = 12
@@ -122,10 +125,11 @@ struct KanbanBoardView: View {
             ScrollView(.horizontal, showsIndicators: true) {
                 HStack(alignment: .top, spacing: columnSpacing) {
                     ForEach(columns, id: \.id) { column in
+                        let colWidth = columnWidthOverride?(column.id) ?? columnWidth(forVisible: max(columns.count, 1), in: width)
                         ColumnView(
                             board: board,
                             column: column,
-                            width: columnWidth(forVisible: max(columns.count, 1), in: width),
+                            width: colWidth,
                             height: height,
                             viewModel: viewModel,
                             onWidthDrag: nil
@@ -134,7 +138,9 @@ struct KanbanBoardView: View {
                             // Codex 권고: overlay 가 아니라 sibling 으로 둬야 horizontal/vertical
                             // ScrollView 가 drag 를 가로채지 않는다. ColumnView 의 onDrop 모디파이어
                             // 영역 바깥에 위치.
-                            KanbanColumnResizeHandle(height: height, onWidthDrag: onColumnWidthDrag)
+                            KanbanColumnResizeHandle(height: height) { dx, isEnded in
+                                onColumnWidthDrag(column.id, dx, isEnded)
+                            }
                         }
                     }
                     AddColumnTile(width: columnWidth(forVisible: max(columns.count, 1), in: width)) {

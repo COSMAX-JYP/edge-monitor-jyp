@@ -5,13 +5,16 @@ struct KanbanSlidePanelView: View {
     @Bindable var settings: KanbanSlidePanelSettings
     var onRequestClose: () -> Void = {}
 
-    /// 컬럼 폭 드래그 시작 시점의 panelColumnWidth 스냅샷. nil 이면 idle.
-    @State private var columnResizeBase: Double?
+    /// 컬럼별 드래그 시작 시점의 폭 스냅샷. key = column.id.
+    @State private var columnResizeBases: [UUID: Double] = [:]
 
-    /// settings.panelColumnWidth 가 UserDefaults backing computed property 라
-    /// @Observable 자동 추적이 안 된다 → SwiftUI body 재계산 안 일어남.
-    /// @State mirror 로 실시간 반영. drag 시 두 값 모두 갱신.
-    @State private var columnWidthMirror: Double?
+    /// 컬럼별 폭 mirror — settings.columnWidth(for:) 가 UserDefaults backing 이라
+    /// @Observable 자동 추적 불가. drag/버튼 변경 시 mirror 갱신하여 즉시 재계산.
+    @State private var columnWidthMirrors: [UUID: Double] = [:]
+
+    /// 헤더 ± 버튼이 변경하는 fallback panelColumnWidth 미러. 컬럼별 override 없는
+    /// 컬럼들에 적용.
+    @State private var fallbackColumnWidthMirror: Double?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -27,33 +30,38 @@ struct KanbanSlidePanelView: View {
             // 폰트가 시각적으로 줄어든 효과.
             GeometryReader { proxy in
                 let s = slidePanelContentScale
-                let effectiveWidth = columnWidthMirror ?? settings.panelColumnWidth
                 KanbanBoardView(
                     viewModel: viewModel,
-                    minColumnWidth: CGFloat(effectiveWidth),
-                    maxColumnWidth: CGFloat(effectiveWidth + 60),
-                    onColumnWidthDrag: { dx, isEnded in
-                        let base = columnResizeBase ?? settings.panelColumnWidth
-                        if columnResizeBase == nil { columnResizeBase = base }
+                    minColumnWidth: CGFloat(settings.panelColumnWidth),
+                    maxColumnWidth: CGFloat(settings.panelColumnWidth + 60),
+                    onColumnWidthDrag: { columnId, dx, isEnded in
+                        let storedBase = settings.columnWidth(for: columnId)
+                        let base = columnResizeBases[columnId] ?? storedBase
+                        if columnResizeBases[columnId] == nil {
+                            columnResizeBases[columnId] = base
+                        }
                         let next = base + Double(dx) / Double(s)
                         let clamped = max(
                             KanbanSlidePanelSettings.minPanelColumnWidth,
                             min(KanbanSlidePanelSettings.maxPanelColumnWidth, next)
                         )
-                        settings.panelColumnWidth = clamped
-                        columnWidthMirror = clamped  // SwiftUI body 즉시 재계산
-                        if isEnded { columnResizeBase = nil }
+                        settings.setColumnWidth(clamped, for: columnId)
+                        columnWidthMirrors[columnId] = clamped
+                        if isEnded { columnResizeBases[columnId] = nil }
+                    },
+                    columnWidthOverride: { columnId in
+                        if let m = columnWidthMirrors[columnId] { return CGFloat(m) }
+                        // 컬럼별 override 가 settings 에 저장돼 있으면 사용, 아니면 fallback.
+                        let map = (UserDefaults.standard.dictionary(forKey: "slidepanel.columnWidths") as? [String: Double]) ?? [:]
+                        if let stored = map[columnId.uuidString] { return CGFloat(stored) }
+                        return CGFloat(fallbackColumnWidthMirror ?? settings.panelColumnWidth)
                     }
                 )
                 .frame(width: proxy.size.width / s, height: proxy.size.height / s, alignment: .topLeading)
                 .scaleEffect(s, anchor: .topLeading)
             }
-            .background(.ultraThinMaterial)
-            .onAppear {
-                columnWidthMirror = settings.panelColumnWidth
-            }
         }
-        .background(.thinMaterial)
+        .background(.thinMaterial)  // 이중 material(.thin + .ultraThin) 제거 → 렌더링 비용 절감
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
@@ -78,7 +86,8 @@ struct KanbanSlidePanelView: View {
         .padding(.vertical, 8)
     }
 
-    /// 패널 헤더에서 즉시 컬럼 폭 조정 + 자동 저장. settings 와 mirror 동시 갱신.
+    /// 패널 헤더에서 즉시 컬럼 폭 조정 + 자동 저장. 컬럼별 override 가 없는 컬럼들에만
+    /// 영향 (fallback 일괄 변경). 개별 컬럼은 우측 가장자리 드래그로 조정.
     private var columnWidthControl: some View {
         HStack(spacing: 4) {
             Button {
@@ -87,7 +96,7 @@ struct KanbanSlidePanelView: View {
                     settings.panelColumnWidth - 20
                 )
                 settings.panelColumnWidth = next
-                columnWidthMirror = next
+                fallbackColumnWidthMirror = next
             } label: { Image(systemName: "minus.rectangle") }
             .help("컬럼 좁게")
 
@@ -97,7 +106,7 @@ struct KanbanSlidePanelView: View {
                     settings.panelColumnWidth + 20
                 )
                 settings.panelColumnWidth = next
-                columnWidthMirror = next
+                fallbackColumnWidthMirror = next
             } label: { Image(systemName: "plus.rectangle") }
             .help("컬럼 넓게")
         }

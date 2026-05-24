@@ -51,6 +51,7 @@ final class KanbanSlidePanelSettings {
         static let panelWidth = "slidepanel.width"
         static let panelHeight = "slidepanel.height"
         static let panelColumnWidth = "slidepanel.columnWidth"
+        static let panelColumnWidths = "slidepanel.columnWidths" // [UUID-string: Double]
         static let targetDisplay = "slidepanel.targetDisplay"
         static let autoHideOnBlur = "slidepanel.autoHideOnBlur"
         static let autoHideOnEscape = "slidepanel.autoHideOnEscape"
@@ -99,12 +100,28 @@ final class KanbanSlidePanelSettings {
     }
 
     /// SlidePad 안 KanbanBoardView 의 컬럼 한 개 폭. 기본 220 (좁은 패널에 한두 컬럼).
+    /// 컬럼별 override 가 없을 때의 fallback.
     var panelColumnWidth: Double {
         get { (defaults.object(forKey: Keys.panelColumnWidth) as? Double) ?? 220.0 }
         set {
             let clamped = min(Self.maxPanelColumnWidth, max(Self.minPanelColumnWidth, newValue))
             defaults.set(clamped, forKey: Keys.panelColumnWidth)
         }
+    }
+
+    /// 컬럼별 폭 override. 키는 KanbanColumn.id.uuidString, 값은 폭 (pt).
+    /// 없으면 panelColumnWidth fallback.
+    func columnWidth(for columnId: UUID) -> Double {
+        let map = (defaults.dictionary(forKey: Keys.panelColumnWidths) as? [String: Double]) ?? [:]
+        if let v = map[columnId.uuidString] { return v }
+        return panelColumnWidth
+    }
+
+    func setColumnWidth(_ width: Double, for columnId: UUID) {
+        var map = (defaults.dictionary(forKey: Keys.panelColumnWidths) as? [String: Double]) ?? [:]
+        let clamped = min(Self.maxPanelColumnWidth, max(Self.minPanelColumnWidth, width))
+        map[columnId.uuidString] = clamped
+        defaults.set(map, forKey: Keys.panelColumnWidths)
     }
 
     var targetDisplayPolicy: SlidePanelDisplayPolicy {
