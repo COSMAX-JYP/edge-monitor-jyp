@@ -10,6 +10,9 @@ struct KanbanCard: Codable, Identifiable, Hashable, Sendable {
     var assignee: String
     var checklist: [ChecklistItem]
     var attachments: [Attachment]
+    /// SlidePad 의 3:7 분할 구조에서 카드가 위쪽 30% 영역인지. false = 아래쪽 70%.
+    /// 기본값 false (하단). 메인 윈도우 칸반에서는 영향 없음.
+    var isUpper: Bool
     var createdAt: Date
     var updatedAt: Date
 
@@ -23,6 +26,7 @@ struct KanbanCard: Codable, Identifiable, Hashable, Sendable {
         assignee: String = "",
         checklist: [ChecklistItem] = [],
         attachments: [Attachment] = [],
+        isUpper: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -35,6 +39,7 @@ struct KanbanCard: Codable, Identifiable, Hashable, Sendable {
         self.assignee = assignee
         self.checklist = checklist
         self.attachments = attachments
+        self.isUpper = isUpper
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -50,6 +55,7 @@ struct KanbanCard: Codable, Identifiable, Hashable, Sendable {
         self.assignee = try c.decodeIfPresent(String.self, forKey: .assignee) ?? ""
         self.checklist = try c.decodeIfPresent([ChecklistItem].self, forKey: .checklist) ?? []
         self.attachments = try c.decodeIfPresent([Attachment].self, forKey: .attachments) ?? []
+        self.isUpper = try c.decodeIfPresent(Bool.self, forKey: .isUpper) ?? false
         self.createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         self.updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
     }

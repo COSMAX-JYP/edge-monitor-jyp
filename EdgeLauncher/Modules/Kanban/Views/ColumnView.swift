@@ -39,35 +39,20 @@ struct ColumnView: View {
                     .frame(height: hasCustomColor ? 7 : 4)
             }
             header(style: style, accent: accent)
-            ScrollView(showsIndicators: false) {
-                ZStack(alignment: .top) {
-                    Color.clear
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            viewModel.startNewCard(in: column.id)
-                        }
-                    VStack(spacing: cardSpacing) {
-                        ForEach(Array(column.cards.enumerated()), id: \.element.id) { index, card in
-                            DraggableCardRow(
-                                boardId: board.id,
-                                columnId: column.id,
-                                columnName: column.name,
-                                index: index,
-                                card: card,
-                                labels: board.labels,
-                                viewModel: viewModel
-                            )
-                        }
-                        Color.clear.frame(height: trailingSpace)
-                    }
-                    .padding(innerPadding)
-                    .frame(maxWidth: .infinity, alignment: .top)
-                    // maxHeight: .infinity 제거 — VStack 이 부모 만큼 늘어나면 자식을 vertical
-                    // center 시키는 SwiftUI 동작 발생. 자연 height 로 두면 outer ZStack(.top)
-                    // 의 top edge 에 정렬되어 카드가 상단부터 채워진다.
-                }
-                .frame(minHeight: max(0, height - 50))
+            // 3:7 분할 — 위 30% 영역 + 가로 divider + 아래 70% 영역. 사용자가 카드 메뉴
+            // 의 "위/아래로 이동" 으로 영역 이동.
+            VStack(spacing: 0) {
+                zoneArea(
+                    cards: column.cards.filter { $0.isUpper },
+                    isUpper: true,
+                    contentHeight: max(0, (height - 50) * 0.3)
+                )
+                Divider().background(Color.primary.opacity(0.15))
+                zoneArea(
+                    cards: column.cards.filter { !$0.isUpper },
+                    isUpper: false,
+                    contentHeight: max(0, (height - 50) * 0.7)
+                )
             }
             .frame(maxHeight: .infinity)
             .background(
@@ -114,6 +99,38 @@ struct ColumnView: View {
                 },
                 onCancel: { isEditingColor = false }
             )
+        }
+    }
+
+    /// 3:7 영역. 카드 목록 + 빈 영역 tap-to-add 가 그대로 동작.
+    @ViewBuilder
+    private func zoneArea(cards: [KanbanCard], isUpper: Bool, contentHeight: CGFloat) -> some View {
+        ScrollView(showsIndicators: false) {
+            ZStack(alignment: .top) {
+                Color.clear
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        viewModel.startNewCard(in: column.id, isUpper: isUpper)
+                    }
+                VStack(spacing: isSlidePadStyle ? 4 : 12) {
+                    ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
+                        DraggableCardRow(
+                            boardId: board.id,
+                            columnId: column.id,
+                            columnName: column.name,
+                            index: index,
+                            card: card,
+                            labels: board.labels,
+                            viewModel: viewModel
+                        )
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(isSlidePadStyle ? 6 : 12)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+            .frame(minHeight: contentHeight)
         }
     }
 
@@ -234,7 +251,8 @@ private struct DraggableCardRow: View {
             isExternal: isExternal,
             hideAction: hideAction,
             onTap: { viewModel.editCard(card) },
-            onDelete: { viewModel.requestDelete(card) }
+            onDelete: { viewModel.requestDelete(card) },
+            onToggleZone: isExternal ? nil : { viewModel.toggleCardZone(card.id) }
         )
         .modifier(ExternalCardDragModifier(
             isExternal: isExternal,

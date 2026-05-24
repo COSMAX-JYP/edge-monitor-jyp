@@ -115,9 +115,21 @@ final class KanbanViewModel {
 
     // MARK: - Card lifecycle
 
-    func startNewCard(in columnId: UUID) {
-        editingCard = KanbanCard(title: "")
+    func startNewCard(in columnId: UUID, isUpper: Bool = false) {
+        editingCard = KanbanCard(title: "", isUpper: isUpper)
         editingTargetColumnId = columnId
+    }
+
+    /// 카드를 위 30% / 아래 70% 영역 사이에서 토글. SlidePad/메인 윈도우 공통.
+    func toggleCardZone(_ cardId: UUID) {
+        guard let (boardId, columnId) = store.findColumnId(forCard: cardId) else { return }
+        if let board = store.data.boards.first(where: { $0.id == boardId }),
+           let column = board.columns.first(where: { $0.id == columnId }),
+           let card = column.cards.first(where: { $0.id == cardId }) {
+            var updated = card
+            updated.isUpper.toggle()
+            store.updateCard(updated)
+        }
     }
 
     func editCard(_ card: KanbanCard) {

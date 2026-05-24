@@ -7,6 +7,7 @@ struct CardView: View {
     var hideAction: HideAction? = nil
     var onTap: () -> Void
     var onDelete: () -> Void
+    var onToggleZone: (() -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
 
     enum HideAction {
@@ -95,6 +96,11 @@ struct CardView: View {
         .onTapGesture(perform: onTap)
         .contextMenu {
             Button("편집") { onTap() }
+            if let onToggleZone {
+                Button(card.isUpper ? "아래 영역으로 이동" : "위 영역으로 이동") {
+                    onToggleZone()
+                }
+            }
             Divider()
             Button("삭제", role: .destructive) { onDelete() }
         }
