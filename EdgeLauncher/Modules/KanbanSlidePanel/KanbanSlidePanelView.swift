@@ -45,9 +45,13 @@ struct KanbanSlidePanelView: View {
                             KanbanSlidePanelSettings.minPanelColumnWidth,
                             min(KanbanSlidePanelSettings.maxPanelColumnWidth, next)
                         )
-                        settings.setColumnWidth(clamped, for: columnId)
+                        // drag 중에는 mirror 만 갱신해 SwiftUI 재계산 트리거. UserDefaults
+                        // write 는 drag 종료 시점에만 1회 (60Hz 의 UserDefaults.set spam 회피).
                         columnWidthMirrors[columnId] = clamped
-                        if isEnded { columnResizeBases[columnId] = nil }
+                        if isEnded {
+                            settings.setColumnWidth(clamped, for: columnId)
+                            columnResizeBases[columnId] = nil
+                        }
                     },
                     columnWidthOverride: { columnId in
                         if let m = columnWidthMirrors[columnId] { return CGFloat(m) }
