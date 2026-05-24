@@ -55,6 +55,7 @@ struct ColumnView: View {
                         Color.clear.frame(height: 80)
                     }
                     .padding(12)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
                 .frame(minHeight: max(0, height - 50))
             }
