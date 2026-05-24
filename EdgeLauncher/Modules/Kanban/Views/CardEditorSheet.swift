@@ -37,19 +37,23 @@ struct CardEditorSheet: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            formColumn
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                formColumn
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                Divider()
+                previewColumn
+                    .frame(width: 400)
+            }
             Divider()
-            previewColumn
-                .frame(width: 360)
+            actionBar
         }
         .background(
             CardEditorShortcutMonitor(isEnabled: canSave) {
                 saveAndDismiss()
             }
         )
-        .appSheetFrame(width: 0.45...0.7, height: 0.55...0.88)
+        .appSheetFrame(width: 0.5...0.75, height: 0.6...0.9)
         .onAppear {
             if isNew {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -62,84 +66,110 @@ struct CardEditorSheet: View {
     // MARK: - 좌측 입력 폼 (mockup 5 — Inline Preview / 명시적 라벨 + 큰 폰트)
 
     private var formColumn: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            // 헤더: 타이틀 + 저장/취소
-            HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 28) {
+            // 헤더: 타이틀만 — 저장/취소는 하단 actionBar.
+            HStack(spacing: 14) {
                 Text(isNew ? "새 카드" : "카드 편집")
-                    .font(.system(size: 26, weight: .bold))
+                    .font(.system(size: 34, weight: .bold))
                 Spacer()
-                Button("취소", action: onCancel).kanbanDialogSecondaryButton()
-                Button(isNew ? "추가" : "저장") { saveAndDismiss() }
-                    .kanbanDialogPrimaryButton()
-                    .keyboardShortcut(.return, modifiers: .option)
-                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
             }
 
-            // 제목
-            VStack(alignment: .leading, spacing: 6) {
+            // 제목 — hero 입력
+            VStack(alignment: .leading, spacing: 10) {
                 fieldLabel("제목 *")
                 TextField("새 카드 제목", text: $title)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 18))
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 30, weight: .semibold))
                     .focused($titleFocused)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.primary.opacity(0.05))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+                    )
             }
 
             // 노트
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 10) {
                 fieldLabel("노트")
                 TextEditor(text: $notes)
-                    .frame(minHeight: 180, maxHeight: .infinity)
-                    .font(.system(size: 16))
+                    .frame(minHeight: 240, maxHeight: .infinity)
+                    .font(.system(size: 18))
+                    .padding(8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.primary.opacity(0.04))
+                    )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
                     )
             }
 
             // 마감일 + 담당자
-            HStack(spacing: 14) {
-                VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 20) {
+                VStack(alignment: .leading, spacing: 10) {
                     fieldLabel("마감일")
-                    HStack(spacing: 8) {
-                        Toggle("", isOn: $hasDueDate).labelsHidden().controlSize(.regular)
+                    HStack(spacing: 12) {
+                        Toggle("", isOn: $hasDueDate).labelsHidden().controlSize(.large)
                         if hasDueDate {
                             DatePicker("", selection: $dueDate, displayedComponents: .date)
                                 .labelsHidden()
-                                .font(.system(size: 15))
+                                .font(.system(size: 18))
+                                .controlSize(.large)
                         } else {
-                            Text("설정 안 함").font(.system(size: 15)).foregroundStyle(.tertiary)
+                            Text("설정 안 함").font(.system(size: 17)).foregroundStyle(.tertiary)
                         }
+                        Spacer()
                     }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.04))
+                    )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                VStack(alignment: .leading, spacing: 6) {
+
+                VStack(alignment: .leading, spacing: 10) {
                     fieldLabel("담당자")
                     TextField("@username (옵션)", text: $assignee)
-                        .textFieldStyle(.roundedBorder)
-                        .font(.system(size: 15))
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 18))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.04))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10).strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+                        )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             // 라벨
             if !labels.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
                     fieldLabel("라벨")
-                    FlowLayout(spacing: 8) {
+                    FlowLayout(spacing: 10) {
                         ForEach(labels, id: \.id) { label in
                             let active = selectedLabels.contains(label.id)
                             let color = Color.fromHex(label.colorHex) ?? .accentColor
                             Button {
                                 if active { selectedLabels.remove(label.id) } else { selectedLabels.insert(label.id) }
                             } label: {
-                                HStack(spacing: 6) {
-                                    Circle().fill(color).frame(width: 8, height: 8)
-                                    Text(label.name).font(.system(size: 14, weight: .medium))
+                                HStack(spacing: 8) {
+                                    Circle().fill(color).frame(width: 11, height: 11)
+                                    Text(label.name).font(.system(size: 16, weight: .medium))
                                 }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Capsule().fill(color.opacity(active ? 0.28 : 0.10)))
-                                .overlay(Capsule().strokeBorder(color.opacity(active ? 0.65 : 0), lineWidth: 1.2))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 9)
+                                .background(Capsule().fill(color.opacity(active ? 0.3 : 0.12)))
+                                .overlay(Capsule().strokeBorder(color.opacity(active ? 0.75 : 0), lineWidth: 1.5))
                                 .foregroundStyle(active ? Color.primary : Color.secondary)
                             }
                             .buttonStyle(.plain)
@@ -149,21 +179,44 @@ struct CardEditorSheet: View {
             }
 
             HStack {
-                Text("⌥↵ 저장 · Esc 취소").font(.system(size: 13)).foregroundStyle(.secondary)
+                Text("⌥↵ 저장 · Esc 취소").font(.system(size: 14)).foregroundStyle(.secondary)
                 Spacer()
-                Text("\(title.count + notes.count) / 8000").font(.system(size: 13, design: .monospaced)).foregroundStyle(.secondary)
+                Text("\(title.count + notes.count) / 8000").font(.system(size: 14, design: .monospaced)).foregroundStyle(.secondary)
             }
-            .padding(.top, 4)
+            .padding(.top, 6)
         }
-        .padding(28)
+        .padding(36)
+    }
+
+    // MARK: - 하단 액션 바 (codex 권고)
+
+    private var actionBar: some View {
+        HStack(spacing: 12) {
+            Spacer()
+            Button("취소", action: onCancel)
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .font(.system(size: 17, weight: .medium))
+                .frame(minWidth: 88, minHeight: 44)
+            Button(isNew ? "추가" : "저장") { saveAndDismiss() }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .font(.system(size: 17, weight: .semibold))
+                .frame(minWidth: 104, minHeight: 44)
+                .keyboardShortcut(.return, modifiers: .option)
+                .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+        }
+        .padding(.horizontal, 36)
+        .padding(.vertical, 14)
+        .background(Color.primary.opacity(0.025))
     }
 
     private func fieldLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 13, weight: .semibold))
+            .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(.secondary)
             .textCase(.uppercase)
-            .tracking(0.4)
+            .tracking(0.6)
     }
 
     // MARK: - 우측 실시간 미리보기 (5번 Inline Preview)
@@ -191,62 +244,63 @@ struct CardEditorSheet: View {
     }
 
     private var previewCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             if !title.isEmpty {
                 Text(title)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(Color.primary)
                     .lineLimit(3)
             } else {
                 Text("제목 없음")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(.tertiary)
             }
             if !notes.isEmpty {
                 Text(notes)
-                    .font(.system(size: 14))
+                    .font(.system(size: 16))
+                    .lineSpacing(4)
                     .foregroundStyle(.secondary)
-                    .lineLimit(5)
+                    .lineLimit(6)
             }
             if hasDueDate || !assignee.isEmpty {
-                HStack(spacing: 10) {
+                HStack(spacing: 14) {
                     if hasDueDate {
-                        HStack(spacing: 4) {
-                            Image(systemName: "calendar").font(.system(size: 12, weight: .semibold))
-                            Text(dueDate.formatted(date: .abbreviated, time: .omitted)).font(.system(size: 13, weight: .medium))
+                        HStack(spacing: 5) {
+                            Image(systemName: "calendar").font(.system(size: 14, weight: .semibold))
+                            Text(dueDate.formatted(date: .abbreviated, time: .omitted)).font(.system(size: 15, weight: .medium))
                         }.foregroundStyle(.orange)
                     }
                     if !assignee.isEmpty {
-                        Text("@\(assignee)").font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
+                        Text("@\(assignee)").font(.system(size: 15, weight: .medium)).foregroundStyle(.secondary)
                     }
                 }
-                .padding(.top, 2)
+                .padding(.top, 4)
             }
             if !selectedLabels.isEmpty {
-                FlowLayout(spacing: 5) {
+                FlowLayout(spacing: 6) {
                     ForEach(labels.filter { selectedLabels.contains($0.id) }, id: \.id) { label in
                         let color = Color.fromHex(label.colorHex) ?? .accentColor
-                        HStack(spacing: 4) {
-                            Circle().fill(color).frame(width: 7, height: 7)
-                            Text(label.name).font(.system(size: 12, weight: .medium))
+                        HStack(spacing: 5) {
+                            Circle().fill(color).frame(width: 9, height: 9)
+                            Text(label.name).font(.system(size: 13, weight: .medium))
                         }
-                        .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(Capsule().fill(color.opacity(0.20)))
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Capsule().fill(color.opacity(0.22)))
                     }
                 }
-                .padding(.top, 2)
+                .padding(.top, 4)
             }
         }
-        .padding(16)
+        .padding(22)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color.primary.opacity(0.04))
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.primary.opacity(0.05))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 10).strokeBorder(Color.primary.opacity(0.14), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.14), lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.18), radius: 12, y: 6)
+        .shadow(color: Color.black.opacity(0.18), radius: 14, y: 4)
     }
 
     @State private var assigneeExpanded: Bool = false
