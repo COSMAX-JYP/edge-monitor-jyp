@@ -176,10 +176,3 @@ private extension NSScreen {
     }
 }
 
-// Task 9 에서 실제 SwiftUI 뷰로 교체. 현재는 controller 가 NSHostingView 를 만들 수 있도록 빈 placeholder.
-struct KanbanSlidePanelView: View {
-    let viewModel: KanbanViewModel
-    let settings: KanbanSlidePanelSettings
-    var onRequestClose: () -> Void = {}
-    var body: some View { EmptyView() }
-}
