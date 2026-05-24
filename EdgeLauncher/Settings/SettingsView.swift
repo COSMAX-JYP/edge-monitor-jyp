@@ -35,6 +35,10 @@ struct SettingsView: View {
             ModuleVisibilityView()
                 .environmentObject(env.registry)
                 .tabItem { Label("탭", systemImage: "rectangle.split.3x1") }
+
+            SlidePadKanbanSettingsView(settings: env.slidePanelSettings)
+                .environmentObject(env)
+                .tabItem { Label("SlidePad 칸반", systemImage: "rectangle.righthalf.inset.filled") }
         }
         // Edge 디스플레이(720pt) 의 85% = 612pt 로 고정. 가로는 Edge 가 2560 으로 넉넉하므로 1100 이상.
         .frame(minWidth: 900, idealWidth: 1400, maxWidth: 2000, minHeight: 540, idealHeight: 612, maxHeight: 612)
