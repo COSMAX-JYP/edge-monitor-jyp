@@ -33,12 +33,29 @@ final class CorsairHIDCapture {
         guard manager == nil else { return }
 
         // 입력 모니터링 + 이벤트 합성(Accessibility) 두 권한 모두 필요.
-        let listenAccess = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
-        Self.log("IOHIDRequestAccess(listen)   = \(listenAccess)")
-        let postAccess = IOHIDRequestAccess(kIOHIDRequestTypePostEvent)
-        Self.log("IOHIDRequestAccess(postEvent)= \(postAccess)")
-        let axTrusted = AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary)
-        Self.log("AXIsProcessTrusted = \(axTrusted) (Accessibility 권한 — 클릭 합성에 필수)")
+        // 사전 체크 후 미부여 상태일 때만 요청한다. (이미 granted 면 prompt 가 다시 안 뜨도록)
+        // - macOS 가 ad-hoc 빌드의 코드 서명이 바뀌면 권한이 재인증 필요 상태가 될 수 있는데,
+        //   prompt 무조건 호출 시 빌드마다 동시 다발 다이얼로그 spam 이 발생하므로 가드 필수.
+        let listenStatus = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
+        Self.log("IOHIDCheckAccess(listen)    = \(Self.hidAccessName(listenStatus))")
+        if listenStatus != kIOHIDAccessTypeGranted {
+            let listenAccess = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
+            Self.log("IOHIDRequestAccess(listen)   = \(listenAccess)")
+        }
+
+        let postStatus = IOHIDCheckAccess(kIOHIDRequestTypePostEvent)
+        Self.log("IOHIDCheckAccess(postEvent) = \(Self.hidAccessName(postStatus))")
+        if postStatus != kIOHIDAccessTypeGranted {
+            let postAccess = IOHIDRequestAccess(kIOHIDRequestTypePostEvent)
+            Self.log("IOHIDRequestAccess(postEvent)= \(postAccess)")
+        }
+
+        if AXIsProcessTrusted() {
+            Self.log("AXIsProcessTrusted = true (Accessibility 이미 부여됨)")
+        } else {
+            let axTrusted = AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary)
+            Self.log("AXIsProcessTrusted = \(axTrusted) (Accessibility 권한 — 클릭 합성에 필수)")
+        }
 
         let m = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
         let match: [String: Any] = [
@@ -221,6 +238,15 @@ final class CorsairHIDCapture {
         return url
     }()
     private static let logHandle: FileHandle? = try? FileHandle(forWritingTo: logFileURL)
+
+    static func hidAccessName(_ type: IOHIDAccessType) -> String {
+        switch type {
+        case kIOHIDAccessTypeGranted: return "granted"
+        case kIOHIDAccessTypeDenied: return "denied"
+        case kIOHIDAccessTypeUnknown: return "unknown"
+        default: return "raw(\(type.rawValue))"
+        }
+    }
 
     static func ioReturnName(_ code: IOReturn) -> String {
         switch code {
