@@ -35,6 +35,18 @@ final class KanbanSlidePanelAutoHide: NSObject, NSWindowDelegate {
         if viewModel.pendingDeleteCard != nil { return true }
         if viewModel.pendingDeleteBoardId != nil { return true }
         if isDragging { return true }
+        if currentResponderHasMarkedText() { return true }
+        return false
+    }
+
+    /// IME 조합 중(예: 한글 입력기 미확정) 에 외부 클릭으로 패널 닫히는 것을 막는다.
+    private func currentResponderHasMarkedText() -> Bool {
+        guard let window = NSApp.keyWindow else { return false }
+        var responder: NSResponder? = window.firstResponder
+        while let r = responder {
+            if let client = r as? NSTextInputClient, client.hasMarkedText() { return true }
+            responder = r.nextResponder
+        }
         return false
     }
 

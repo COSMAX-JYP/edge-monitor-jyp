@@ -85,4 +85,14 @@ final class KanbanSlidePanelAutoHideTests: XCTestCase {
         ah.install(); ah.install()
         ah.uninstall(); ah.uninstall()
     }
+
+    func test_currentResponderMarkedText_falseByDefault() {
+        // 테스트 환경에서 NSApp.keyWindow == nil → false 가 나와야 한다.
+        let ah = KanbanSlidePanelAutoHide(
+            viewModel: makeVM(),
+            settings: KanbanSlidePanelSettings(defaults: defaults),
+            panelFrameProvider: { .zero }
+        )
+        XCTAssertFalse(ah.shouldSuspend())
+    }
 }
