@@ -14,6 +14,7 @@ struct CardEditorSheet: View {
     @State private var hasDueDate: Bool
     @State private var dueDate: Date
     @State private var assignee: String
+    @State private var showDatePicker: Bool = false
     @FocusState private var titleFocused: Bool
 
     init(
@@ -38,13 +39,8 @@ struct CardEditorSheet: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                formColumn
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                Divider()
-                previewColumn
-                    .frame(width: 400)
-            }
+            formColumn
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             Divider()
             actionBar
         }
@@ -53,7 +49,7 @@ struct CardEditorSheet: View {
                 saveAndDismiss()
             }
         )
-        .appSheetFrame(width: 0.5...0.75, height: 0.6...0.9)
+        .appSheetFrame(width: 0.45...0.7, height: 0.6...0.9)
         .onAppear {
             if isNew {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -80,12 +76,13 @@ struct CardEditorSheet: View {
                 TextField("새 카드 제목", text: $title)
                     .textFieldStyle(.plain)
                     .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(Color.black)
                     .focused($titleFocused)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.primary.opacity(0.05))
+                            .fill(Color.white)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
@@ -93,62 +90,89 @@ struct CardEditorSheet: View {
                     )
             }
 
-            // 노트
+            // 노트 — WKWebView 기반 Quill rich text editor (스크린샷/표 paste 지원)
             VStack(alignment: .leading, spacing: 10) {
                 fieldLabel("노트")
-                TextEditor(text: $notes)
-                    .frame(minHeight: 240, maxHeight: .infinity)
-                    .font(.system(size: 18))
-                    .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.primary.opacity(0.04))
-                    )
+                NoteRichEditor(html: $notes)
+                    .frame(minHeight: 320, maxHeight: .infinity)
+                    .background(Color.white)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
                             .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
                     )
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
             }
 
-            // 마감일 + 담당자
-            HStack(spacing: 20) {
-                VStack(alignment: .leading, spacing: 10) {
-                    fieldLabel("마감일")
-                    HStack(spacing: 12) {
-                        Toggle("", isOn: $hasDueDate).labelsHidden().controlSize(.large)
-                        if hasDueDate {
-                            DatePicker("", selection: $dueDate, displayedComponents: .date)
-                                .labelsHidden()
-                                .font(.system(size: 18))
-                                .controlSize(.large)
-                        } else {
-                            Text("설정 안 함").font(.system(size: 17)).foregroundStyle(.tertiary)
+            // 마감일 — flatpickr 캘린더 popover (시간 포함, 한국어).
+            VStack(alignment: .leading, spacing: 10) {
+                fieldLabel("마감일")
+                HStack(spacing: 14) {
+                    Toggle("", isOn: $hasDueDate).labelsHidden().controlSize(.large)
+                    if hasDueDate {
+                        Button {
+                            showDatePicker.toggle()
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 17, weight: .semibold))
+                                Text(dueDate, format: .dateTime
+                                    .year()
+                                    .month(.abbreviated)
+                                    .day()
+                                    .hour(.defaultDigits(amPM: .omitted))
+                                    .minute()
+                                    .locale(Locale(identifier: "ko_KR")))
+                                    .font(.system(size: 18, weight: .semibold))
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .opacity(0.6)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 9)
+                                    .fill(Color.accentColor.opacity(0.15))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 9)
+                                    .strokeBorder(Color.accentColor.opacity(0.45), lineWidth: 1)
+                            )
+                            .foregroundStyle(Color.accentColor)
                         }
-                        Spacer()
+                        .buttonStyle(.plain)
+                        .popover(isPresented: $showDatePicker, arrowEdge: .bottom) {
+                            CalendarPickerWebView(date: $dueDate)
+                                .frame(width: 520, height: 560)
+                        }
+                    } else {
+                        Text("설정 안 함").font(.system(size: 17)).foregroundStyle(.tertiary)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.04))
-                    )
+                    Spacer()
                 }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.04))
+                )
+            }
 
-                VStack(alignment: .leading, spacing: 10) {
-                    fieldLabel("담당자")
-                    TextField("@username (옵션)", text: $assignee)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 18))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.04))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10).strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
-                        )
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // 담당자
+            VStack(alignment: .leading, spacing: 10) {
+                fieldLabel("담당자")
+                TextField("@username (옵션)", text: $assignee)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 18))
+                    .foregroundStyle(Color.black)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10).fill(Color.white)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10).strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+                    )
             }
 
             // 라벨
@@ -191,23 +215,27 @@ struct CardEditorSheet: View {
     // MARK: - 하단 액션 바 (codex 권고)
 
     private var actionBar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 18) {
             Spacer()
-            Button("취소", action: onCancel)
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-                .font(.system(size: 17, weight: .medium))
-                .frame(minWidth: 88, minHeight: 44)
-            Button(isNew ? "추가" : "저장") { saveAndDismiss() }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .font(.system(size: 17, weight: .semibold))
-                .frame(minWidth: 104, minHeight: 44)
-                .keyboardShortcut(.return, modifiers: .option)
-                .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+            Button(action: onCancel) {
+                Text("취소")
+                    .font(.system(size: 22, weight: .semibold))
+                    .frame(minWidth: 160, minHeight: 56)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            Button(action: saveAndDismiss) {
+                Text(isNew ? "추가" : "저장")
+                    .font(.system(size: 22, weight: .bold))
+                    .frame(minWidth: 200, minHeight: 56)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .keyboardShortcut(.return, modifiers: .option)
+            .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
         }
         .padding(.horizontal, 36)
-        .padding(.vertical, 14)
+        .padding(.vertical, 22)
         .background(Color.primary.opacity(0.025))
     }
 
@@ -217,108 +245,6 @@ struct CardEditorSheet: View {
             .foregroundStyle(.secondary)
             .textCase(.uppercase)
             .tracking(0.6)
-    }
-
-    // MARK: - 우측 실시간 미리보기 (5번 Inline Preview)
-
-    private var previewColumn: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("실시간 미리보기")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-                .tracking(0.5)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            previewCard
-                .padding(.top, 2)
-
-            Spacer()
-
-            Text("저장 후 보드에 보일 모습")
-                .font(.system(size: 12))
-                .foregroundStyle(.tertiary)
-        }
-        .padding(24)
-        .background(Color.primary.opacity(0.03))
-    }
-
-    private var previewCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if !title.isEmpty {
-                Text(title)
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(Color.primary)
-                    .lineLimit(3)
-            } else {
-                Text("제목 없음")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(.tertiary)
-            }
-            if !notes.isEmpty {
-                Text(notes)
-                    .font(.system(size: 16))
-                    .lineSpacing(4)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(6)
-            }
-            if hasDueDate || !assignee.isEmpty {
-                HStack(spacing: 14) {
-                    if hasDueDate {
-                        HStack(spacing: 5) {
-                            Image(systemName: "calendar").font(.system(size: 14, weight: .semibold))
-                            Text(dueDate.formatted(date: .abbreviated, time: .omitted)).font(.system(size: 15, weight: .medium))
-                        }.foregroundStyle(.orange)
-                    }
-                    if !assignee.isEmpty {
-                        Text("@\(assignee)").font(.system(size: 15, weight: .medium)).foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.top, 4)
-            }
-            if !selectedLabels.isEmpty {
-                FlowLayout(spacing: 6) {
-                    ForEach(labels.filter { selectedLabels.contains($0.id) }, id: \.id) { label in
-                        let color = Color.fromHex(label.colorHex) ?? .accentColor
-                        HStack(spacing: 5) {
-                            Circle().fill(color).frame(width: 9, height: 9)
-                            Text(label.name).font(.system(size: 13, weight: .medium))
-                        }
-                        .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(Capsule().fill(color.opacity(0.22)))
-                    }
-                }
-                .padding(.top, 4)
-            }
-        }
-        .padding(22)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color.primary.opacity(0.05))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.14), lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.18), radius: 14, y: 4)
-    }
-
-    @State private var assigneeExpanded: Bool = false
-
-    private func metaChip(icon: String, label: String, active: Bool, accent: Color?, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: icon).font(.appCaption)
-                Text(label).font(.appCaption)
-            }
-            .padding(.horizontal, 9)
-            .padding(.vertical, 4)
-            .background(
-                Capsule().fill((accent ?? Color.primary).opacity(active ? 0.18 : 0.07))
-            )
-            .foregroundStyle(active ? (accent ?? Color.primary) : Color.secondary)
-        }
-        .buttonStyle(.plain)
     }
 
     private var canSave: Bool {

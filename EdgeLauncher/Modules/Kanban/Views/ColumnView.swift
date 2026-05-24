@@ -150,9 +150,25 @@ struct ColumnView: View {
                 viewModel.startNewCard(in: column.id)
             } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 20, weight: .heavy))
+                    .foregroundStyle(.white)
+                    .frame(width: 38, height: 38)
+                    .background(
+                        Circle().fill(
+                            LinearGradient(
+                                colors: [accent, accent.opacity(0.72)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                    )
+                    .overlay(
+                        Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+                    )
+                    .shadow(color: accent.opacity(0.45), radius: 6, y: 2)
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
+            .help("새 카드 추가")
             Menu {
                 Button("이름 변경", action: beginRename)
                 Button {

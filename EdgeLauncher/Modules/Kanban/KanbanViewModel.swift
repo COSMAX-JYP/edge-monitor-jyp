@@ -79,7 +79,7 @@ final class KanbanViewModel {
                 if !hasSearch && !hasFilter { return true }
                 let matchesSearch = !hasSearch
                     || card.title.lowercased().contains(needle)
-                    || card.notes.lowercased().contains(needle)
+                    || card.notes.plainTextFromHTML.lowercased().contains(needle)
                 let matchesFilter = !hasFilter
                     || !Set(card.labelIds).isDisjoint(with: filterLabelIds)
                 return matchesSearch && matchesFilter

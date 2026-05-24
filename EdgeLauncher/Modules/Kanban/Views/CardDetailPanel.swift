@@ -47,14 +47,17 @@ struct CardDetailPanel: View {
                     .foregroundStyle(.secondary)
             }
             if !card.notes.isEmpty {
-                Divider()
-                Text("노트").font(.appFootnote).foregroundStyle(.secondary)
-                ScrollView {
-                    Text(card.notes)
-                        .font(.appBody)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                let plainNotes = card.notes.plainTextFromHTML
+                if !plainNotes.isEmpty {
+                    Divider()
+                    Text("노트").font(.appFootnote).foregroundStyle(.secondary)
+                    ScrollView {
+                        Text(plainNotes)
+                            .font(.appBody)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxHeight: 180)
                 }
-                .frame(maxHeight: 180)
             }
             checklistSection
             attachmentSection

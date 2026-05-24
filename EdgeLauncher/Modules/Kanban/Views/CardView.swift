@@ -46,8 +46,8 @@ struct CardView: View {
                 .multilineTextAlignment(.leading)
             if let due = card.dueDate {
                 Label(dueLabel(due), systemImage: "calendar")
-                    .font(.appCallout)
-                    .foregroundStyle(dueColor(due))
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color.red)
             }
             if !card.assignee.isEmpty {
                 Label(card.assignee, systemImage: "person.crop.circle")
