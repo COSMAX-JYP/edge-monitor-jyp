@@ -61,7 +61,10 @@ struct ColumnView: View {
                         Color.clear.frame(height: trailingSpace)
                     }
                     .padding(innerPadding)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    // maxHeight: .infinity 제거 — VStack 이 부모 만큼 늘어나면 자식을 vertical
+                    // center 시키는 SwiftUI 동작 발생. 자연 height 로 두면 outer ZStack(.top)
+                    // 의 top edge 에 정렬되어 카드가 상단부터 채워진다.
                 }
                 .frame(minHeight: max(0, height - 50))
             }
@@ -76,9 +79,13 @@ struct ColumnView: View {
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .strokeBorder(
                         isSlidePadStyle
-                            ? AnyShapeStyle(Color.white.opacity(isDropTargeted ? 0.2 : 0.06))
+                            ? (hasCustomColor
+                                ? AnyShapeStyle(accent)
+                                : AnyShapeStyle(Color.white.opacity(isDropTargeted ? 0.2 : 0.06)))
                             : AnyShapeStyle(style.columnStroke(accent: accent, hasCustomColor: hasCustomColor, isDropTargeted: isDropTargeted)),
-                        lineWidth: isSlidePadStyle ? (isDropTargeted ? 1.5 : 0.5) : (isDropTargeted || hasCustomColor ? 2 : 1)
+                        lineWidth: isSlidePadStyle
+                            ? (hasCustomColor ? 2 : (isDropTargeted ? 1.5 : 0.5))
+                            : (isDropTargeted || hasCustomColor ? 2 : 1)
                     )
             )
             .shadow(

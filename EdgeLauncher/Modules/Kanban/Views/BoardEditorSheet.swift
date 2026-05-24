@@ -155,6 +155,19 @@ extension Color {
     }
 }
 
+extension Color {
+    /// SwiftUI ColorPicker 결과를 "#RRGGBB" 16진 문자열로 변환.
+    /// 알파 채널은 무시하고 sRGB 8-bit 로 라운드.
+    func toHex() -> String? {
+        let ns = NSColor(self)
+        guard let rgb = ns.usingColorSpace(.sRGB) else { return nil }
+        let r = Int((rgb.redComponent * 255).rounded())
+        let g = Int((rgb.greenComponent * 255).rounded())
+        let b = Int((rgb.blueComponent * 255).rounded())
+        return String(format: "#%02X%02X%02X", r, g, b)
+    }
+}
+
 struct KanbanColorEditorSheet: View {
     let title: String
     let initialColorHex: String?
@@ -213,6 +226,23 @@ struct KanbanColorEditorSheet: View {
                 ColorSwatchPicker(colorHex: $colorHex)
                     .disabled(usesDefault)
                     .opacity(usesDefault ? 0.45 : 1)
+
+                HStack(spacing: 10) {
+                    Text("커스텀").font(.appFootnote).foregroundStyle(.secondary)
+                    // 네이티브 ColorPicker — 마우스로 색상환/스포이드/SwiftUI 의 색상 입력기.
+                    ColorPicker("",
+                                selection: Binding(
+                                    get: { Color.fromHex(colorHex) ?? .accentColor },
+                                    set: { newColor in
+                                        if let hex = newColor.toHex() { colorHex = hex }
+                                    }
+                                ),
+                                supportsOpacity: false)
+                        .labelsHidden()
+                        .disabled(usesDefault)
+                        .opacity(usesDefault ? 0.45 : 1)
+                    Spacer()
+                }
             }
 
             Spacer(minLength: 0)
