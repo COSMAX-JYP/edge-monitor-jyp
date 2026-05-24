@@ -31,9 +31,7 @@ final class AppEnvironment: ObservableObject {
         for cfg in MessengerInstanceConfig.allInstances {
             registry.register(AnyEdgeModule(MessengerModule(config: cfg)))
         }
-        registry.register(AnyEdgeModule(LauncherModule()))
         registry.register(AnyEdgeModule(BrowserModule()))
-        registry.register(AnyEdgeModule(OutlookCalendarModule()))
         registry.register(AnyEdgeModule(NotionModule()))
         self.registry = registry
 
