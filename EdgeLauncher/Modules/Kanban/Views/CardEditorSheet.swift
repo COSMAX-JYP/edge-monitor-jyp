@@ -37,84 +37,19 @@ struct CardEditorSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(spacing: 16) {
-                Text(isNew ? "새 카드" : "카드 편집")
-                    .font(.appTitle)
-                Spacer()
-                Button(isNew ? "추가" : "저장") { saveAndDismiss() }
-                    .kanbanDialogPrimaryButton()
-                    .keyboardShortcut(.return, modifiers: .option)
-                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
-            VStack(alignment: .leading, spacing: 6) {
-                Text("제목").font(.appFootnote).foregroundStyle(.secondary)
-                TextField("필수", text: $title)
-                    .font(.appBody)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($titleFocused)
-            }
-            VStack(alignment: .leading, spacing: 6) {
-                Text("노트").font(.appFootnote).foregroundStyle(.secondary)
-                TextEditor(text: $notes)
-                    .frame(minHeight: 140, maxHeight: 280)
-                    .font(.appBody)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
-                    )
-            }
-            if !labels.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("라벨").font(.appFootnote).foregroundStyle(.secondary)
-                    FlowLayout(spacing: 6) {
-                        ForEach(labels, id: \.id) { label in
-                            let active = selectedLabels.contains(label.id)
-                            Button {
-                                if active { selectedLabels.remove(label.id) } else { selectedLabels.insert(label.id) }
-                            } label: {
-                                Text(label.name)
-                                    .font(.appFootnote)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(
-                                        Capsule()
-                                            .fill((Color.fromHex(label.colorHex) ?? .accentColor).opacity(active ? 0.6 : 0.18))
-                                    )
-                                    .foregroundStyle(active ? Color.white : Color.primary)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-            HStack(spacing: 12) {
-                Toggle("마감일", isOn: $hasDueDate)
-                    .font(.appBody)
-                if hasDueDate {
-                    DatePicker("", selection: $dueDate)
-                        .font(.appBody)
-                        .labelsHidden()
-                }
-                Spacer()
-            }
-            HStack {
-                Text("담당자").font(.appFootnote).foregroundStyle(.secondary)
-                TextField("(옵션)", text: $assignee)
-                    .font(.appBody)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: 800)
-                Spacer()
-            }
-            Spacer()
+        HStack(spacing: 0) {
+            formColumn
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            Divider()
+            previewColumn
+                .frame(width: 280)
         }
-        .padding(24)
         .background(
             CardEditorShortcutMonitor(isEnabled: canSave) {
                 saveAndDismiss()
             }
         )
-        .appSheetFrame(width: 0.35...0.56, height: 0.5...0.85)
+        .appSheetFrame(width: 0.45...0.7, height: 0.55...0.88)
         .onAppear {
             if isNew {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -122,6 +57,199 @@ struct CardEditorSheet: View {
                 }
             }
         }
+    }
+
+    // MARK: - 좌측 입력 폼 (1번 Compact Pill 베이스)
+
+    private var formColumn: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // 헤더: 타이틀 + 저장/취소
+            HStack(spacing: 12) {
+                Text(isNew ? "새 카드" : "카드 편집")
+                    .font(.appTitle)
+                Spacer()
+                Button("취소", action: onCancel).kanbanDialogSecondaryButton()
+                Button(isNew ? "추가" : "저장") { saveAndDismiss() }
+                    .kanbanDialogPrimaryButton()
+                    .keyboardShortcut(.return, modifiers: .option)
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+
+            // 제목 (큰 보더리스 입력)
+            TextField("제목을 입력…", text: $title)
+                .textFieldStyle(.plain)
+                .font(.system(size: 22, weight: .semibold))
+                .focused($titleFocused)
+
+            // 메타 chip — 마감일/담당자/라벨/우선순위 한 줄
+            FlowLayout(spacing: 6) {
+                metaChip(
+                    icon: "calendar",
+                    label: hasDueDate ? dueDate.formatted(date: .abbreviated, time: .omitted) : "마감일",
+                    active: hasDueDate,
+                    accent: hasDueDate ? .orange : nil
+                ) { hasDueDate.toggle() }
+                if hasDueDate {
+                    DatePicker("", selection: $dueDate, displayedComponents: .date)
+                        .labelsHidden()
+                        .controlSize(.small)
+                }
+                metaChip(
+                    icon: "person",
+                    label: assignee.isEmpty ? "담당자" : "@\(assignee)",
+                    active: !assignee.isEmpty,
+                    accent: !assignee.isEmpty ? .blue : nil
+                ) {
+                    // chip 클릭 → assignee 인라인 편집 필드 표시(아래 row 로).
+                    assigneeExpanded.toggle()
+                }
+                ForEach(labels, id: \.id) { label in
+                    let active = selectedLabels.contains(label.id)
+                    let color = Color.fromHex(label.colorHex) ?? .accentColor
+                    Button {
+                        if active { selectedLabels.remove(label.id) } else { selectedLabels.insert(label.id) }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Circle().fill(color).frame(width: 6, height: 6)
+                            Text(label.name).font(.appCaption)
+                        }
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule().fill(color.opacity(active ? 0.25 : 0.10))
+                        )
+                        .overlay(
+                            Capsule().strokeBorder(color.opacity(active ? 0.6 : 0), lineWidth: 1)
+                        )
+                        .foregroundStyle(active ? Color.primary : Color.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            if assigneeExpanded || !assignee.isEmpty {
+                TextField("@username", text: $assignee)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.appCallout)
+                    .frame(maxWidth: 320)
+            }
+
+            // 노트 — 큰 영역, Markdown 안내
+            VStack(alignment: .leading, spacing: 4) {
+                Text("노트 (Markdown 지원)").font(.appFootnote).foregroundStyle(.secondary)
+                TextEditor(text: $notes)
+                    .frame(minHeight: 180, maxHeight: .infinity)
+                    .font(.appBody)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
+                    )
+            }
+
+            HStack {
+                Text("⌥↵ 저장 · Esc 취소").font(.appCaption).foregroundStyle(.secondary)
+                Spacer()
+                Text("\(title.count + notes.count) / 8000").font(.appCaptionMono).foregroundStyle(.secondary)
+            }
+            .padding(.top, 4)
+        }
+        .padding(24)
+    }
+
+    // MARK: - 우측 실시간 미리보기 (5번 Inline Preview)
+
+    private var previewColumn: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("실시간 미리보기")
+                .font(.appCaption).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            previewCard
+                .padding(.top, 4)
+
+            Spacer()
+
+            Text("저장 후 보드에 보일 모습")
+                .font(.appCaption).foregroundStyle(.secondary)
+        }
+        .padding(20)
+        .background(Color.primary.opacity(0.03))
+    }
+
+    private var previewCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if !title.isEmpty {
+                Text(title)
+                    .font(.appBodyBold)
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(3)
+            } else {
+                Text("제목 없음")
+                    .font(.appBodyBold)
+                    .foregroundStyle(.tertiary)
+            }
+            if !notes.isEmpty {
+                Text(notes)
+                    .font(.appFootnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(4)
+            }
+            if hasDueDate || !assignee.isEmpty {
+                HStack(spacing: 6) {
+                    if hasDueDate {
+                        HStack(spacing: 3) {
+                            Image(systemName: "calendar").font(.appCaption)
+                            Text(dueDate.formatted(date: .abbreviated, time: .omitted)).font(.appCaption)
+                        }.foregroundStyle(.orange)
+                    }
+                    if !assignee.isEmpty {
+                        Text("@\(assignee)").font(.appCaption).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.top, 2)
+            }
+            if !selectedLabels.isEmpty {
+                FlowLayout(spacing: 4) {
+                    ForEach(labels.filter { selectedLabels.contains($0.id) }, id: \.id) { label in
+                        let color = Color.fromHex(label.colorHex) ?? .accentColor
+                        HStack(spacing: 3) {
+                            Circle().fill(color).frame(width: 5, height: 5)
+                            Text(label.name).font(.appCaption)
+                        }
+                        .padding(.horizontal, 6).padding(.vertical, 1.5)
+                        .background(Capsule().fill(color.opacity(0.18)))
+                    }
+                }
+                .padding(.top, 2)
+            }
+        }
+        .padding(11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.primary.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6).strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+        )
+    }
+
+    @State private var assigneeExpanded: Bool = false
+
+    private func metaChip(icon: String, label: String, active: Bool, accent: Color?, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Image(systemName: icon).font(.appCaption)
+                Text(label).font(.appCaption)
+            }
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(
+                Capsule().fill((accent ?? Color.primary).opacity(active ? 0.18 : 0.07))
+            )
+            .foregroundStyle(active ? (accent ?? Color.primary) : Color.secondary)
+        }
+        .buttonStyle(.plain)
     }
 
     private var canSave: Bool {
