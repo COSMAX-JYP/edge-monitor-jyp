@@ -1,5 +1,18 @@
 import SwiftUI
 
+/// SlidePad 전용 톤(Compact Dense — outline 제거, 좁은 spacing) 분기를 위한 환경 키.
+/// 메인 윈도우 칸반은 false(기본) → 기존 디자인 보존, SlidePad 안만 true.
+private struct IsSlidePadStyleKey: EnvironmentKey {
+    static let defaultValue: Bool = false
+}
+
+extension EnvironmentValues {
+    var isSlidePadStyle: Bool {
+        get { self[IsSlidePadStyleKey.self] }
+        set { self[IsSlidePadStyleKey.self] = newValue }
+    }
+}
+
 struct KanbanBoardView: View {
     @Bindable var viewModel: KanbanViewModel
     /// 호출 측에서 override 가능 — SlidePad 처럼 좁은 컨테이너에서는 더 작은 값 사용.
@@ -12,8 +25,9 @@ struct KanbanBoardView: View {
     /// 컬럼별 폭 override. nil 이면 자동 균등 분할 (기존 동작).
     var columnWidthOverride: ((UUID) -> CGFloat?)? = nil
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.isSlidePadStyle) private var isSlidePadStyle
 
-    private let columnSpacing: CGFloat = 12
+    private var columnSpacing: CGFloat { isSlidePadStyle ? 4 : 12 }
 
     @State private var newColumnName: String = ""
     @State private var isAddingColumn: Bool = false

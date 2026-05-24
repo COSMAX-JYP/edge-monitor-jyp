@@ -13,6 +13,7 @@ struct ColumnView: View {
     /// - parameter isEnded: false=onChanged, true=onEnded.
     var onWidthDrag: ((CGFloat, Bool) -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.isSlidePadStyle) private var isSlidePadStyle
 
     @State private var renameValue: String = ""
     @State private var isRenaming: Bool = false
@@ -25,8 +26,13 @@ struct ColumnView: View {
         let accent = style.accent(from: column.colorHex)
         let hasCustomColor = column.colorHex != nil
 
+        let cardSpacing: CGFloat = isSlidePadStyle ? 4 : 12
+        let innerPadding: CGFloat = isSlidePadStyle ? 6 : 12
+        let trailingSpace: CGFloat = isSlidePadStyle ? 24 : 80
+        let cornerRadius: CGFloat = isSlidePadStyle ? 6 : 12
+
         VStack(spacing: 0) {
-            if style.isLight {
+            if style.isLight && !isSlidePadStyle {
                 Rectangle()
                     .fill(accent)
                     .frame(height: hasCustomColor ? 7 : 4)
@@ -40,7 +46,7 @@ struct ColumnView: View {
                         .onTapGesture {
                             viewModel.startNewCard(in: column.id)
                         }
-                    VStack(spacing: 12) {
+                    VStack(spacing: cardSpacing) {
                         ForEach(Array(column.cards.enumerated()), id: \.element.id) { index, card in
                             DraggableCardRow(
                                 boardId: board.id,
@@ -52,24 +58,36 @@ struct ColumnView: View {
                                 viewModel: viewModel
                             )
                         }
-                        Color.clear.frame(height: 80)
+                        Color.clear.frame(height: trailingSpace)
                     }
-                    .padding(12)
+                    .padding(innerPadding)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
                 .frame(minHeight: max(0, height - 50))
             }
             .frame(maxHeight: .infinity)
-            .background(style.columnBackground(accent: accent, hasCustomColor: hasCustomColor))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .background(
+                isSlidePadStyle
+                    ? AnyShapeStyle(Color.white.opacity(0.03))
+                    : AnyShapeStyle(style.columnBackground(accent: accent, hasCustomColor: hasCustomColor))
+            )
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .strokeBorder(
-                        style.columnStroke(accent: accent, hasCustomColor: hasCustomColor, isDropTargeted: isDropTargeted),
-                        lineWidth: isDropTargeted || hasCustomColor ? 2 : 1
+                        isSlidePadStyle
+                            ? AnyShapeStyle(Color.white.opacity(isDropTargeted ? 0.2 : 0.06))
+                            : AnyShapeStyle(style.columnStroke(accent: accent, hasCustomColor: hasCustomColor, isDropTargeted: isDropTargeted)),
+                        lineWidth: isSlidePadStyle ? (isDropTargeted ? 1.5 : 0.5) : (isDropTargeted || hasCustomColor ? 2 : 1)
                     )
             )
-            .shadow(color: style.isLight ? Color.black.opacity(0.04) : accent.opacity(hasCustomColor ? 0.24 : 0.05), radius: hasCustomColor ? 18 : 8, y: 8)
+            .shadow(
+                color: isSlidePadStyle
+                    ? Color.clear
+                    : (style.isLight ? Color.black.opacity(0.04) : accent.opacity(hasCustomColor ? 0.24 : 0.05)),
+                radius: isSlidePadStyle ? 0 : (hasCustomColor ? 18 : 8),
+                y: isSlidePadStyle ? 0 : 8
+            )
             .onDrop(of: [.kanbanCardRef, .plainText], isTargeted: $isDropTargeted) { providers in
                 viewModel.handleDrop(providers: providers, toColumn: column.id, toIndex: column.cards.count)
             }

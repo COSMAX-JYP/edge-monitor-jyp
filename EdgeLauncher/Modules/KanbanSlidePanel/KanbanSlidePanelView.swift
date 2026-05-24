@@ -80,6 +80,7 @@ struct KanbanSlidePanelView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .preferredColorScheme(effectiveDarkMode ? .dark : .light)
         .environment(\.colorScheme, effectiveDarkMode ? .dark : .light)
+        .environment(\.isSlidePadStyle, true)  // Compact Dense — outline/shadow 약화, spacing 압축
     }
 
     /// 0.624 = AppTypography 18pt → 11.2pt 환산. drag 는 NSEvent.localMonitor 가
