@@ -39,8 +39,20 @@ final class KeychainTokenStore {
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
         ]
-        SecItemDelete(baseQuery as CFDictionary)
-        guard let value, let data = value.data(using: .utf8) else { return }
+
+        // nil 이면 삭제만.
+        guard let value, let data = value.data(using: .utf8) else {
+            SecItemDelete(baseQuery as CFDictionary)
+            return
+        }
+
+        // upsert: 기존 item 의 ACL("항상 허용") 을 보존하기 위해 delete+add 대신 update 우선.
+        // delete+add 는 ACL trusted-application list 가 매번 새로 만들어져 사용자가 반복 프롬프트를 보게 된다.
+        let updateAttrs: [String: Any] = [kSecValueData as String: data]
+        let updateStatus = SecItemUpdate(baseQuery as CFDictionary, updateAttrs as CFDictionary)
+        if updateStatus == errSecSuccess { return }
+
+        // 신규 item — ACL 부여 (첫 저장 시 사용자가 "항상 허용" 한 번 누르면 끝).
         var addQuery = baseQuery
         addQuery[kSecValueData as String] = data
         addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
