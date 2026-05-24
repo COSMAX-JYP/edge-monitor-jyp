@@ -4,6 +4,8 @@ struct KanbanSlidePanelView: View {
     @Bindable var viewModel: KanbanViewModel
     @Bindable var settings: KanbanSlidePanelSettings
     var onRequestClose: () -> Void = {}
+    /// 헤더의 "화면 폭으로" 버튼 콜백. Controller 가 NSScreen 폭으로 panel.setFrame.
+    var onResizeFullWidth: () -> Void = {}
 
     /// 컬럼별 드래그 시작 시점의 폭 스냅샷. key = column.id.
     @State private var columnResizeBases: [UUID: Double] = [:]
@@ -92,6 +94,25 @@ struct KanbanSlidePanelView: View {
             BoardPickerView(viewModel: viewModel)
             Spacer()
             columnWidthControl
+
+            // 시선이 한 번에 잡히도록 채워진 오렌지 배경 + 화살표 아이콘 + 라벨.
+            Button(action: onResizeFullWidth) {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.left.and.right")
+                    Text("화면 폭")
+                }
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(Color(red: 1.0, green: 0.45, blue: 0.10)) // bright orange
+                )
+            }
+            .buttonStyle(.plain)
+            .help("패널 폭을 현재 화면 가로 해상도로 재조정")
+
             Button {
                 let next = !settings.darkMode
                 settings.darkMode = next
@@ -99,15 +120,17 @@ struct KanbanSlidePanelView: View {
             } label: {
                 Image(systemName: effectiveDarkMode ? "moon.fill" : "sun.max.fill")
             }
+            .buttonStyle(.borderless)
             .help(effectiveDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환")
             Button { settings.isPinned.toggle() } label: {
                 Image(systemName: settings.isPinned ? "pin.fill" : "pin")
             }
+            .buttonStyle(.borderless)
             .help(settings.isPinned ? "핀 해제" : "핀")
             Button { onRequestClose() } label: { Image(systemName: "xmark") }
+                .buttonStyle(.borderless)
                 .help("닫기")
         }
-        .buttonStyle(.borderless)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
     }

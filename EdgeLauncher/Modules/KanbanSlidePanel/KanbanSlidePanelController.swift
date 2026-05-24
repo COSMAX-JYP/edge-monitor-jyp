@@ -73,6 +73,23 @@ final class KanbanSlidePanelController {
 
     func warmUp() { ensurePanelCreated() }
 
+    /// 현재 패널이 표시된 디스플레이의 visibleFrame.width 를 읽어 패널 폭을 그 값으로 갱신.
+    /// 패널이 떠 있으면 즉시 setFrame, 아니면 settings 만 갱신 (다음 호출에 적용).
+    func resizePanelToFullScreenWidth() {
+        let screen = resolveTargetScreen()
+        let width = Double(screen.visibleFrame.width)
+        settings.panelWidth = width
+        if let panel, isPresented {
+            let target = Self.computeTargetFrame(
+                screenFrame: screen.visibleFrame,
+                panelWidth: width,
+                panelHeight: settings.panelHeight,
+                heightRatio: 0.92
+            )
+            panel.setFrame(target, display: true, animate: true)
+        }
+    }
+
     // MARK: - System observers (sleep/wake, display reconfig)
     func installSystemObservers(rebindHotKey: @escaping @MainActor () -> Void) {
         let wsc = NSWorkspace.shared.notificationCenter
@@ -150,7 +167,8 @@ final class KanbanSlidePanelController {
         let root = KanbanSlidePanelView(
             viewModel: vm,
             settings: settings,
-            onRequestClose: { [weak self] in self?.hide() }
+            onRequestClose: { [weak self] in self?.hide() },
+            onResizeFullWidth: { [weak self] in self?.resizePanelToFullScreenWidth() }
         )
         let hosting = NSHostingView(rootView: root)
         self.hostingView = hosting
