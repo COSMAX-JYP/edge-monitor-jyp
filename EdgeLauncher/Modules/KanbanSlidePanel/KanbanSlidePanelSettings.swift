@@ -40,8 +40,9 @@ final class KanbanSlidePanelSettings {
     static let maxPanelWidth: Double = 5000
     static let minPanelHeight: Double = 320
     static let maxPanelHeight: Double = 5000
-    static let minPanelColumnWidth: Double = 180
-    static let maxPanelColumnWidth: Double = 800
+    /// 컬럼 폭 제약을 사실상 해제 — 사용자가 마음껏 조정 가능.
+    static let minPanelColumnWidth: Double = 40
+    static let maxPanelColumnWidth: Double = 4000
     static let minAnimationDuration: Double = 0.10
     static let maxAnimationDuration: Double = 0.40
 
