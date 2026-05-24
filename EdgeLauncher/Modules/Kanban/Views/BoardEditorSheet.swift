@@ -156,13 +156,82 @@ extension Color {
     }
 }
 
-/// NSColorWell 을 SwiftUI 로 노출. 클릭 시 macOS NSColorPanel 자동 표시 — NSPanel
-/// 안에서도 동작. 색 변경은 NSColorWell.action 으로 binding 에 반영.
+/// Sheet 안에 inline 으로 들어가는 HSB 슬라이더 + RGB hex 미리보기 picker.
+/// NSColorPanel 별창 안 띄움 — 닫힐 때 자동 정리 신경 안 써도 됨.
+struct InlineHSBPicker: View {
+    @Binding var colorHex: String
+
+    private var color: Color { Color.fromHex(colorHex) ?? .accentColor }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(color)
+                    .frame(width: 56, height: 56)
+                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.primary.opacity(0.15), lineWidth: 1))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    component(label: "H", value: hueBinding, range: 0...1, gradientColors: hueGradientColors)
+                    component(label: "S", value: saturationBinding, range: 0...1, gradientColors: [.white, color])
+                    component(label: "B", value: brightnessBinding, range: 0...1, gradientColors: [.black, color])
+                }
+            }
+        }
+    }
+
+    private func component(label: String, value: Binding<Double>, range: ClosedRange<Double>, gradientColors: [Color]) -> some View {
+        HStack(spacing: 8) {
+            Text(label).font(.appCaptionBold).frame(width: 16, alignment: .leading).foregroundStyle(.secondary)
+            ZStack(alignment: .leading) {
+                LinearGradient(colors: gradientColors, startPoint: .leading, endPoint: .trailing)
+                    .frame(height: 14)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                Slider(value: value, in: range)
+                    .controlSize(.small)
+                    .tint(.clear)
+                    .frame(height: 14)
+            }
+            Text(String(format: "%.0f", value.wrappedValue * 100))
+                .font(.appCaptionMono).foregroundStyle(.secondary).frame(width: 30, alignment: .trailing)
+        }
+    }
+
+    private var hsb: (Double, Double, Double) {
+        let ns = NSColor(color).usingColorSpace(.deviceRGB) ?? NSColor.white
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        ns.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        return (Double(h), Double(s), Double(b))
+    }
+
+    private var hueBinding: Binding<Double> {
+        Binding(get: { hsb.0 }, set: { setHSB($0, hsb.1, hsb.2) })
+    }
+    private var saturationBinding: Binding<Double> {
+        Binding(get: { hsb.1 }, set: { setHSB(hsb.0, $0, hsb.2) })
+    }
+    private var brightnessBinding: Binding<Double> {
+        Binding(get: { hsb.2 }, set: { setHSB(hsb.0, hsb.1, $0) })
+    }
+
+    private func setHSB(_ h: Double, _ s: Double, _ b: Double) {
+        let ns = NSColor(hue: CGFloat(h), saturation: CGFloat(s), brightness: CGFloat(b), alpha: 1.0)
+        if let hex = Color(nsColor: ns).toHex() { colorHex = hex }
+    }
+
+    private var hueGradientColors: [Color] {
+        stride(from: 0.0, through: 1.0, by: 1.0 / 6.0).map { Color(hue: $0, saturation: 1, brightness: 1) }
+    }
+}
+
+/// NSColorWell 을 SwiftUI 로 노출. 클릭 시 macOS NSColorPanel 표시.
+/// 활성화 시 NSColorPanel.level = popUpMenu 로 SlidePad NSPanel(.statusBar) 위에 떠
+/// 항상 최상단, 클릭한 well 좌표 옆에 위치, sheet 닫힘 시 자동 close.
 struct NativeColorWell: NSViewRepresentable {
     @Binding var selection: Color
 
     func makeNSView(context: Context) -> NSColorWell {
-        let well = NSColorWell()
+        let well = TopMostColorWell()
         well.color = NSColor(selection)
         well.target = context.coordinator
         well.action = #selector(Coordinator.colorChanged(_:))
@@ -182,6 +251,38 @@ struct NativeColorWell: NSViewRepresentable {
         @objc func colorChanged(_ sender: NSColorWell) {
             parent.selection = Color(nsColor: sender.color)
         }
+    }
+}
+
+/// activate 시 NSColorPanel 의 level 을 popUpMenu(101) 로 올리고 well 옆에 위치.
+final class TopMostColorWell: NSColorWell {
+    override func activate(_ exclusive: Bool) {
+        super.activate(exclusive)
+        let panel = NSColorPanel.shared
+        // SlidePad NSPanel 이 .statusBar(25) 라 popUpMenu(101) 가 안정적으로 위.
+        panel.level = .popUpMenu
+        panel.collectionBehavior.insert(.canJoinAllSpaces)
+        panel.collectionBehavior.insert(.fullScreenAuxiliary)
+        positionPanelNearWell(panel)
+    }
+
+    private func positionPanelNearWell(_ panel: NSPanel) {
+        guard let win = self.window else { return }
+        let wellRectInWindow = self.convert(self.bounds, to: nil)
+        let wellScreenRect = win.convertToScreen(wellRectInWindow)
+        // well 의 우측 위에 panel 좌상단을 두되, 화면 밖이면 좌측으로 옮김.
+        var origin = NSPoint(x: wellScreenRect.maxX + 12, y: wellScreenRect.maxY)
+        if let screen = win.screen {
+            let visible = screen.visibleFrame
+            let estimatedPanelSize = panel.frame.size
+            if origin.x + estimatedPanelSize.width > visible.maxX {
+                origin.x = wellScreenRect.minX - estimatedPanelSize.width - 12
+            }
+            if origin.y - estimatedPanelSize.height < visible.minY {
+                origin.y = visible.minY + estimatedPanelSize.height
+            }
+        }
+        panel.setFrameTopLeftPoint(origin)
     }
 }
 
@@ -257,28 +358,16 @@ struct KanbanColorEditorSheet: View {
                     .disabled(usesDefault)
                     .opacity(usesDefault ? 0.45 : 1)
 
-                HStack(spacing: 10) {
-                    Text("커스텀").font(.appFootnote).foregroundStyle(.secondary)
-                    // SwiftUI ColorPicker 가 NSPanel(.nonactivatingPanel) 안에서 native
-                    // NSColorPanel 을 못 띄우는 경우가 있어 NSColorWell 직접 사용.
-                    NativeColorWell(
-                        selection: Binding(
-                            get: { Color.fromHex(colorHex) ?? .accentColor },
-                            set: { newColor in
-                                if let hex = newColor.toHex() { colorHex = hex }
-                            }
-                        )
-                    )
-                    .frame(width: 36, height: 24)
+                Divider().padding(.vertical, 2)
+                Text("커스텀").font(.appFootnote).foregroundStyle(.secondary)
+                InlineHSBPicker(colorHex: $colorHex)
                     .disabled(usesDefault)
                     .opacity(usesDefault ? 0.45 : 1)
-                    Spacer()
-                }
             }
 
             Spacer(minLength: 0)
         }
         .padding(24)
-        .frame(minWidth: 520, idealWidth: 640, maxWidth: 720, minHeight: 380, idealHeight: 420, maxHeight: 480)
+        .frame(minWidth: 640, idealWidth: 760, maxWidth: 900, minHeight: 540, idealHeight: 600, maxHeight: 720)
     }
 }
