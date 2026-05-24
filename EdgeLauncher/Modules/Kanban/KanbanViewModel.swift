@@ -59,19 +59,13 @@ final class KanbanViewModel {
         let needle = searchQuery.lowercased()
         let hasSearch = !searchQuery.isEmpty
         let hasFilter = !filterLabelIds.isEmpty
-        let reminderCards = reminderBridge.cards
         let hiddenIds = Set(board.hiddenCardIds)
-        // 미리알림 컬럼이 있을 때만 reminderBridge 권한 요청 시도.
-        if reminderCards.isEmpty,
-           board.columns.contains(where: { $0.name.isKanbanReminderColumn }),
-           !reminderBridge.hasAccess {
-            Task { await reminderBridge.requestAccessIfNeeded() }
-        }
         return board.columns.map { col in
             var working = col
-            if col.name.isKanbanReminderColumn {
-                // 외부 미리알림을 컬럼 상단에 주입. 기존 카드는 그대로 유지.
-                working.cards = reminderCards + col.cards
+            if reminderBridge.listNames.contains(col.name) {
+                // 미리알림 전용 컬럼: 컬럼명과 동일한 리스트의 미리알림만 표시.
+                // 로컬 카드는 표시하지 않는다 (전용 강제).
+                working.cards = reminderBridge.cardsByList[col.name] ?? []
             }
             working.cards = working.cards.filter { card in
                 let hiddenAndHiding = !showHiddenCards && hiddenIds.contains(card.id)
@@ -90,6 +84,18 @@ final class KanbanViewModel {
 
     func isReminderCard(_ cardId: UUID) -> Bool {
         reminderBridge.isReminderCard(cardId)
+    }
+
+    /// 컬럼 이름이 macOS 미리알림 리스트 이름과 일치하면 그 컬럼은 미리알림 전용.
+    func isReminderColumn(_ name: String) -> Bool {
+        reminderBridge.listNames.contains(name)
+    }
+
+    /// 컬럼 id 로 미리알림 전용 여부 판정.
+    func isReminderColumn(id columnId: UUID) -> Bool {
+        guard let board = activeBoard,
+              let col = board.columns.first(where: { $0.id == columnId }) else { return false }
+        return reminderBridge.listNames.contains(col.name)
     }
 
     func isHiddenCard(_ cardId: UUID) -> Bool {
@@ -133,11 +139,7 @@ final class KanbanViewModel {
     }
 
     func editCard(_ card: KanbanCard) {
-        // 미리알림 카드는 외부 데이터라 편집 불가. 디테일 패널만 띄움.
-        if reminderBridge.isReminderCard(card.id) {
-            detailCard = card
-            return
-        }
+        // 미리알림 카드도 편집 가능 (수정 시 macOS 미리알림에 반영).
         editingCard = card
         editingTargetColumnId = nil
         detailCard = nil
@@ -145,7 +147,27 @@ final class KanbanViewModel {
 
     func saveEditing(_ card: KanbanCard) {
         if let columnId = editingTargetColumnId {
-            store.addCard(card, to: columnId)
+            // 새 카드. 대상 컬럼이 미리알림 전용이면 macOS 미리알림 생성.
+            if isReminderColumn(id: columnId),
+               let board = activeBoard,
+               let col = board.columns.first(where: { $0.id == columnId }) {
+                _ = reminderBridge.createReminder(
+                    in: col.name,
+                    title: card.title,
+                    notes: card.notes,
+                    dueDate: card.dueDate
+                )
+            } else {
+                store.addCard(card, to: columnId)
+            }
+        } else if reminderBridge.isReminderCard(card.id) {
+            // 기존 미리알림 카드 수정 → macOS 미리알림 업데이트.
+            _ = reminderBridge.updateReminder(
+                cardId: card.id,
+                title: card.title,
+                notes: card.notes,
+                dueDate: card.dueDate
+            )
         } else {
             store.updateCard(card)
         }
@@ -304,8 +326,45 @@ final class KanbanViewModel {
 
     func handleDrop(ref: KanbanCardRef, toColumn: UUID, toIndex: Int, toUpper: Bool? = nil) -> Bool {
         guard let board = activeBoard, ref.boardId == board.id else { return false }
-        // 미리알림 카드는 store 에 존재하지 않으므로 이동 불가.
-        if reminderBridge.isReminderCard(ref.cardId) { return false }
+        guard let targetCol = board.columns.first(where: { $0.id == toColumn }) else { return false }
+        let targetIsReminder = reminderBridge.listNames.contains(targetCol.name)
+        let sourceIsReminder = reminderBridge.isReminderCard(ref.cardId)
+
+        // 미리알림 카드를 드래그하는 경우.
+        if sourceIsReminder {
+            if targetIsReminder {
+                // 전용 → 전용. 같은 리스트 내 순서 변경은 의미 없고, 다른 리스트로의
+                // 이동은 미지원(무시). 드롭 자체는 소비.
+                return true
+            }
+            // 미리알림 → 일반 컬럼: 미리알림 완료 처리 후 로컬 카드로 변환.
+            guard let card = reminderBridge.cards.first(where: { $0.id == ref.cardId }) else { return false }
+            let local = KanbanCard(
+                title: card.title,
+                notes: card.notes,
+                dueDate: card.dueDate,
+                isUpper: toUpper ?? false
+            )
+            reminderBridge.markComplete(cardId: ref.cardId)
+            store.addCard(local, to: toColumn)
+            return true
+        }
+
+        // 일반 카드를 드래그하는 경우.
+        if targetIsReminder {
+            // 일반 → 미리알림 전용 컬럼: 미리알림 생성 후 로컬 카드 삭제 (변환).
+            guard let sourceCard = findCard(ref.cardId) else { return false }
+            let ok = reminderBridge.createReminder(
+                in: targetCol.name,
+                title: sourceCard.title,
+                notes: sourceCard.notes,
+                dueDate: sourceCard.dueDate
+            )
+            if ok { store.deleteCard(ref.cardId) }
+            return ok
+        }
+
+        // 일반 → 일반: 기존 이동.
         store.moveCard(cardId: ref.cardId, fromColumn: ref.sourceColumnId, toColumn: toColumn, toIndex: toIndex)
         // zone(상/하) 변경 요청이 있으면 같이 적용.
         if let toUpper {

@@ -27,9 +27,6 @@ struct ColumnView: View {
         let accent = style.accent(from: column.colorHex)
         let hasCustomColor = column.colorHex != nil
 
-        let cardSpacing: CGFloat = isSlidePadStyle ? 4 : 12
-        let innerPadding: CGFloat = isSlidePadStyle ? 6 : 12
-        let trailingSpace: CGFloat = isSlidePadStyle ? 24 : 80
         let cornerRadius: CGFloat = isSlidePadStyle ? 6 : 12
 
         VStack(spacing: 0) {
@@ -258,8 +255,7 @@ private struct DraggableCardRow: View {
             onDelete: { viewModel.requestDelete(card) },
             onToggleZone: isExternal ? nil : { viewModel.toggleCardZone(card.id) }
         )
-        .modifier(ExternalCardDragModifier(
-            isExternal: isExternal,
+        .modifier(CardDragModifier(
             cardId: card.id,
             boardId: boardId,
             columnId: columnId,
@@ -271,24 +267,21 @@ private struct DraggableCardRow: View {
     }
 }
 
-private struct ExternalCardDragModifier: ViewModifier {
-    let isExternal: Bool
+/// 모든 카드(로컬 + 미리알림) 를 드래그 가능하게 한다. 미리알림 카드는 드롭 시
+/// KanbanViewModel.handleDrop 가 일반↔미리알림 변환을 처리한다.
+private struct CardDragModifier: ViewModifier {
     let cardId: UUID
     let boardId: UUID
     let columnId: UUID
     let viewModel: KanbanViewModel
 
     func body(content: Content) -> some View {
-        if isExternal {
-            content
-        } else {
-            content.onDrag {
-                viewModel.dragProvider(ref: KanbanCardRef(
-                    cardId: cardId,
-                    boardId: boardId,
-                    sourceColumnId: columnId
-                ))
-            }
+        content.onDrag {
+            viewModel.dragProvider(ref: KanbanCardRef(
+                cardId: cardId,
+                boardId: boardId,
+                sourceColumnId: columnId
+            ))
         }
     }
 }
