@@ -36,6 +36,10 @@ final class KanbanSlidePanelSettings {
     static let defaultHotKeyModifiers: UInt32 = UInt32(cmdKey | shiftKey)
     static let minPanelWidth: Double = 280
     static let maxPanelWidth: Double = 1200
+    static let minPanelHeight: Double = 320
+    static let maxPanelHeight: Double = 2000
+    static let minPanelColumnWidth: Double = 180
+    static let maxPanelColumnWidth: Double = 420
     static let minAnimationDuration: Double = 0.10
     static let maxAnimationDuration: Double = 0.40
 
@@ -43,6 +47,8 @@ final class KanbanSlidePanelSettings {
         static let hotKeyCode = "slidepanel.hotkey.keyCode"
         static let hotKeyModifiers = "slidepanel.hotkey.modifiers"
         static let panelWidth = "slidepanel.width"
+        static let panelHeight = "slidepanel.height"
+        static let panelColumnWidth = "slidepanel.columnWidth"
         static let targetDisplay = "slidepanel.targetDisplay"
         static let autoHideOnBlur = "slidepanel.autoHideOnBlur"
         static let autoHideOnEscape = "slidepanel.autoHideOnEscape"
@@ -74,6 +80,28 @@ final class KanbanSlidePanelSettings {
         set {
             let clamped = min(Self.maxPanelWidth, max(Self.minPanelWidth, newValue))
             defaults.set(clamped, forKey: Keys.panelWidth)
+        }
+    }
+
+    /// 사용자가 가장자리 드래그로 조정한 패널 높이. 0 이면 화면 비율(0.92) 기본값 사용.
+    var panelHeight: Double {
+        get { (defaults.object(forKey: Keys.panelHeight) as? Double) ?? 0 }
+        set {
+            if newValue <= 0 {
+                defaults.removeObject(forKey: Keys.panelHeight)
+            } else {
+                let clamped = min(Self.maxPanelHeight, max(Self.minPanelHeight, newValue))
+                defaults.set(clamped, forKey: Keys.panelHeight)
+            }
+        }
+    }
+
+    /// SlidePad 안 KanbanBoardView 의 컬럼 한 개 폭. 기본 220 (좁은 패널에 한두 컬럼).
+    var panelColumnWidth: Double {
+        get { (defaults.object(forKey: Keys.panelColumnWidth) as? Double) ?? 220.0 }
+        set {
+            let clamped = min(Self.maxPanelColumnWidth, max(Self.minPanelColumnWidth, newValue))
+            defaults.set(clamped, forKey: Keys.panelColumnWidth)
         }
     }
 

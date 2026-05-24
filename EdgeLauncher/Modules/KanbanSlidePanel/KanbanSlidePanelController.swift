@@ -91,7 +91,7 @@ final class KanbanSlidePanelController {
     private func handleScreenParametersChanged() {
         guard isPresented, let panel else { return }
         let screenFrame = resolveTargetScreen().visibleFrame
-        let target = Self.computeTargetFrame(screenFrame: screenFrame, panelWidth: settings.panelWidth, heightRatio: 0.92)
+        let target = Self.computeTargetFrame(screenFrame: screenFrame, panelWidth: settings.panelWidth, panelHeight: settings.panelHeight, heightRatio: 0.92)
         panel.setFrame(target, display: true, animate: true)
     }
 
@@ -103,8 +103,28 @@ final class KanbanSlidePanelController {
         return NSRect(x: x, y: y, width: CGFloat(panelWidth), height: height)
     }
 
+    /// 사용자가 저장한 height(`panelHeight`>0) 가 있으면 절대값을, 없으면 화면 비율(heightRatio)
+    /// 기반으로 계산. height 가 화면을 넘으면 screen.height 로 클램프.
+    static func computeTargetFrame(screenFrame: NSRect, panelWidth: Double, panelHeight: Double, heightRatio: Double) -> NSRect {
+        let h: CGFloat
+        if panelHeight > 0 {
+            h = min(CGFloat(panelHeight), screenFrame.height)
+        } else {
+            h = screenFrame.height * CGFloat(heightRatio)
+        }
+        let y = screenFrame.minY + (screenFrame.height - h) / 2
+        let x = screenFrame.maxX - CGFloat(panelWidth)
+        return NSRect(x: x, y: y, width: CGFloat(panelWidth), height: h)
+    }
+
     static func computeStartFrame(screenFrame: NSRect, panelWidth: Double, heightRatio: Double) -> NSRect {
         var f = computeTargetFrame(screenFrame: screenFrame, panelWidth: panelWidth, heightRatio: heightRatio)
+        f.origin.x = screenFrame.maxX
+        return f
+    }
+
+    static func computeStartFrame(screenFrame: NSRect, panelWidth: Double, panelHeight: Double, heightRatio: Double) -> NSRect {
+        var f = computeTargetFrame(screenFrame: screenFrame, panelWidth: panelWidth, panelHeight: panelHeight, heightRatio: heightRatio)
         f.origin.x = screenFrame.maxX
         return f
     }
@@ -156,8 +176,8 @@ final class KanbanSlidePanelController {
         ensurePanelCreated()
         guard let panel else { completion(); return }
         let screenFrame = resolveTargetScreen().visibleFrame
-        let target = Self.computeTargetFrame(screenFrame: screenFrame, panelWidth: settings.panelWidth, heightRatio: 0.92)
-        let start = Self.computeStartFrame(screenFrame: screenFrame, panelWidth: settings.panelWidth, heightRatio: 0.92)
+        let target = Self.computeTargetFrame(screenFrame: screenFrame, panelWidth: settings.panelWidth, panelHeight: settings.panelHeight, heightRatio: 0.92)
+        let start = Self.computeStartFrame(screenFrame: screenFrame, panelWidth: settings.panelWidth, panelHeight: settings.panelHeight, heightRatio: 0.92)
         panel.setFrame(start, display: false)
         panel.alphaValue = 0
         panel.orderFrontRegardless()
@@ -178,7 +198,7 @@ final class KanbanSlidePanelController {
     private func performHideAnimation(completion: @escaping () -> Void) {
         guard let panel else { completion(); return }
         let screenFrame = resolveTargetScreen().visibleFrame
-        let outFrame = Self.computeStartFrame(screenFrame: screenFrame, panelWidth: settings.panelWidth, heightRatio: 0.92)
+        let outFrame = Self.computeStartFrame(screenFrame: screenFrame, panelWidth: settings.panelWidth, panelHeight: settings.panelHeight, heightRatio: 0.92)
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = max(0.10, settings.slideAnimationDuration * 0.8)
             ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)

@@ -2,11 +2,12 @@ import SwiftUI
 
 struct KanbanBoardView: View {
     @Bindable var viewModel: KanbanViewModel
+    /// 호출 측에서 override 가능 — SlidePad 처럼 좁은 컨테이너에서는 더 작은 값 사용.
+    var minColumnWidth: CGFloat = 420
+    var maxColumnWidth: CGFloat = 560
     @Environment(\.colorScheme) private var colorScheme
 
     private let columnSpacing: CGFloat = 12
-    private let minColumnWidth: CGFloat = 420
-    private let maxColumnWidth: CGFloat = 560
 
     @State private var newColumnName: String = ""
     @State private var isAddingColumn: Bool = false

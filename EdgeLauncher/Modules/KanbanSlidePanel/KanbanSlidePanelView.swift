@@ -9,19 +9,23 @@ struct KanbanSlidePanelView: View {
         VStack(spacing: 0) {
             header
             Divider()
-            ScrollView(.horizontal, showsIndicators: true) {
-                // AppTypography 의 .app* 폰트가 32:9 Edge 용으로 크게 잡혀 있어
-                // 좁은 패널에서는 카드/컬럼이 답답하다. 정공법(AppTypography 환경키)은
-                // 후속 PR. 우선은 scaleEffect 로 시각 축소만 — hit-test 좌표는 SwiftUI
-                // 가 transform 후 좌표를 따라간다.
-                KanbanBoardView(viewModel: viewModel)
-                    .frame(minWidth: 720, alignment: .leading)
-                    .scaleEffect(slidePanelContentScale, anchor: .topLeading)
-                    .frame(
-                        width: 720 * slidePanelContentScale,
-                        height: 1200 * slidePanelContentScale,
-                        alignment: .topLeading
-                    )
+            // SlidePad 전용으로 KanbanBoardView 에 좁은 컬럼 폭 override 주입.
+            // AppTypography 의 .app* 폰트가 32:9 Edge 용으로 크게(18pt) 잡혀
+            // 있어 좁은 패널에서는 답답하다. scaleEffect 로 시각 축소 — SwiftUI
+            // 가 hit-test 좌표를 transform 후 좌표로 잡아주므로 클릭 정확도 유지.
+            // GeometryReader 로 외곽 사이즈 받아서 KanbanBoardView 의 frame 을 1/scale
+            // 만큼 키운 뒤 scaleEffect 로 그 비율만큼 축소 → 결과적으로 GeometryReader
+            // 부모와 동일 폭/높이를 차지하되 내부 컨텐츠는 더 큰 좌표계로 그려지므로
+            // 폰트가 시각적으로 줄어든 효과.
+            GeometryReader { proxy in
+                let s = slidePanelContentScale
+                KanbanBoardView(
+                    viewModel: viewModel,
+                    minColumnWidth: CGFloat(settings.panelColumnWidth),
+                    maxColumnWidth: CGFloat(settings.panelColumnWidth + 60)
+                )
+                .frame(width: proxy.size.width / s, height: proxy.size.height / s, alignment: .topLeading)
+                .scaleEffect(s, anchor: .topLeading)
             }
             .background(.ultraThinMaterial)
         }
@@ -29,8 +33,9 @@ struct KanbanSlidePanelView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    /// 0.65 = ~12pt 환산 (18pt × 0.65 ≈ 11.7pt). 추후 settings 로 가변화 가능.
-    private var slidePanelContentScale: CGFloat { 0.65 }
+    /// 0.52 = AppTypography 18pt → 9.4pt 환산. 사용자 요청 "전체 폰트 -20%" 반영
+    /// (이전 0.65 에서 0.65 × 0.80 = 0.52).
+    private var slidePanelContentScale: CGFloat { 0.52 }
 
     private var header: some View {
         HStack(spacing: 8) {

@@ -16,6 +16,13 @@ struct SlidePadKanbanSettingsView: View {
                     Text("\(Int(settings.panelWidth)) pt").monospacedDigit().frame(width: 70, alignment: .trailing)
                 }
                 HStack {
+                    Text("컬럼 폭")
+                    Slider(value: $settings.panelColumnWidth,
+                           in: KanbanSlidePanelSettings.minPanelColumnWidth...KanbanSlidePanelSettings.maxPanelColumnWidth,
+                           step: 10)
+                    Text("\(Int(settings.panelColumnWidth)) pt").monospacedDigit().frame(width: 70, alignment: .trailing)
+                }
+                HStack {
                     Text("애니메이션 길이")
                     Slider(value: $settings.slideAnimationDuration,
                            in: KanbanSlidePanelSettings.minAnimationDuration...KanbanSlidePanelSettings.maxAnimationDuration,

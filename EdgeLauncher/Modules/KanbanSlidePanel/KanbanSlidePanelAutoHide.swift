@@ -111,6 +111,7 @@ final class KanbanSlidePanelAutoHide: NSObject, NSWindowDelegate {
         Task { @MainActor in
             guard let win = notification.object as? NSWindow else { return }
             self.settings.panelWidth = Double(win.frame.width)
+            self.settings.panelHeight = Double(win.frame.height)
         }
     }
 
