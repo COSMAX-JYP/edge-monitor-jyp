@@ -42,7 +42,7 @@ struct CardEditorSheet: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             Divider()
             previewColumn
-                .frame(width: 280)
+                .frame(width: 360)
         }
         .background(
             CardEditorShortcutMonitor(isEnabled: canSave) {
@@ -59,14 +59,14 @@ struct CardEditorSheet: View {
         }
     }
 
-    // MARK: - 좌측 입력 폼 (1번 Compact Pill 베이스)
+    // MARK: - 좌측 입력 폼 (mockup 5 — Inline Preview / 명시적 라벨 + 큰 폰트)
 
     private var formColumn: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 18) {
             // 헤더: 타이틀 + 저장/취소
             HStack(spacing: 12) {
                 Text(isNew ? "새 카드" : "카드 편집")
-                    .font(.appTitle)
+                    .font(.system(size: 26, weight: .bold))
                 Spacer()
                 Button("취소", action: onCancel).kanbanDialogSecondaryButton()
                 Button(isNew ? "추가" : "저장") { saveAndDismiss() }
@@ -75,163 +75,178 @@ struct CardEditorSheet: View {
                     .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
             }
 
-            // 제목 (큰 보더리스 입력)
-            TextField("제목을 입력…", text: $title)
-                .textFieldStyle(.plain)
-                .font(.system(size: 22, weight: .semibold))
-                .focused($titleFocused)
-
-            // 메타 chip — 마감일/담당자/라벨/우선순위 한 줄
-            FlowLayout(spacing: 6) {
-                metaChip(
-                    icon: "calendar",
-                    label: hasDueDate ? dueDate.formatted(date: .abbreviated, time: .omitted) : "마감일",
-                    active: hasDueDate,
-                    accent: hasDueDate ? .orange : nil
-                ) { hasDueDate.toggle() }
-                if hasDueDate {
-                    DatePicker("", selection: $dueDate, displayedComponents: .date)
-                        .labelsHidden()
-                        .controlSize(.small)
-                }
-                metaChip(
-                    icon: "person",
-                    label: assignee.isEmpty ? "담당자" : "@\(assignee)",
-                    active: !assignee.isEmpty,
-                    accent: !assignee.isEmpty ? .blue : nil
-                ) {
-                    // chip 클릭 → assignee 인라인 편집 필드 표시(아래 row 로).
-                    assigneeExpanded.toggle()
-                }
-                ForEach(labels, id: \.id) { label in
-                    let active = selectedLabels.contains(label.id)
-                    let color = Color.fromHex(label.colorHex) ?? .accentColor
-                    Button {
-                        if active { selectedLabels.remove(label.id) } else { selectedLabels.insert(label.id) }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Circle().fill(color).frame(width: 6, height: 6)
-                            Text(label.name).font(.appCaption)
-                        }
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule().fill(color.opacity(active ? 0.25 : 0.10))
-                        )
-                        .overlay(
-                            Capsule().strokeBorder(color.opacity(active ? 0.6 : 0), lineWidth: 1)
-                        )
-                        .foregroundStyle(active ? Color.primary : Color.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
-            if assigneeExpanded || !assignee.isEmpty {
-                TextField("@username", text: $assignee)
+            // 제목
+            VStack(alignment: .leading, spacing: 6) {
+                fieldLabel("제목 *")
+                TextField("새 카드 제목", text: $title)
                     .textFieldStyle(.roundedBorder)
-                    .font(.appCallout)
-                    .frame(maxWidth: 320)
+                    .font(.system(size: 18))
+                    .focused($titleFocused)
             }
 
-            // 노트 — 큰 영역, Markdown 안내
-            VStack(alignment: .leading, spacing: 4) {
-                Text("노트 (Markdown 지원)").font(.appFootnote).foregroundStyle(.secondary)
+            // 노트
+            VStack(alignment: .leading, spacing: 6) {
+                fieldLabel("노트")
                 TextEditor(text: $notes)
                     .frame(minHeight: 180, maxHeight: .infinity)
-                    .font(.appBody)
+                    .font(.system(size: 16))
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
                             .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
                     )
             }
 
+            // 마감일 + 담당자
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    fieldLabel("마감일")
+                    HStack(spacing: 8) {
+                        Toggle("", isOn: $hasDueDate).labelsHidden().controlSize(.regular)
+                        if hasDueDate {
+                            DatePicker("", selection: $dueDate, displayedComponents: .date)
+                                .labelsHidden()
+                                .font(.system(size: 15))
+                        } else {
+                            Text("설정 안 함").font(.system(size: 15)).foregroundStyle(.tertiary)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 6) {
+                    fieldLabel("담당자")
+                    TextField("@username (옵션)", text: $assignee)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(size: 15))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            // 라벨
+            if !labels.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    fieldLabel("라벨")
+                    FlowLayout(spacing: 8) {
+                        ForEach(labels, id: \.id) { label in
+                            let active = selectedLabels.contains(label.id)
+                            let color = Color.fromHex(label.colorHex) ?? .accentColor
+                            Button {
+                                if active { selectedLabels.remove(label.id) } else { selectedLabels.insert(label.id) }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Circle().fill(color).frame(width: 8, height: 8)
+                                    Text(label.name).font(.system(size: 14, weight: .medium))
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Capsule().fill(color.opacity(active ? 0.28 : 0.10)))
+                                .overlay(Capsule().strokeBorder(color.opacity(active ? 0.65 : 0), lineWidth: 1.2))
+                                .foregroundStyle(active ? Color.primary : Color.secondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+
             HStack {
-                Text("⌥↵ 저장 · Esc 취소").font(.appCaption).foregroundStyle(.secondary)
+                Text("⌥↵ 저장 · Esc 취소").font(.system(size: 13)).foregroundStyle(.secondary)
                 Spacer()
-                Text("\(title.count + notes.count) / 8000").font(.appCaptionMono).foregroundStyle(.secondary)
+                Text("\(title.count + notes.count) / 8000").font(.system(size: 13, design: .monospaced)).foregroundStyle(.secondary)
             }
             .padding(.top, 4)
         }
-        .padding(24)
+        .padding(28)
+    }
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+            .tracking(0.4)
     }
 
     // MARK: - 우측 실시간 미리보기 (5번 Inline Preview)
 
     private var previewColumn: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             Text("실시간 미리보기")
-                .font(.appCaption).foregroundStyle(.secondary)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .tracking(0.5)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             previewCard
-                .padding(.top, 4)
+                .padding(.top, 2)
 
             Spacer()
 
             Text("저장 후 보드에 보일 모습")
-                .font(.appCaption).foregroundStyle(.secondary)
+                .font(.system(size: 12))
+                .foregroundStyle(.tertiary)
         }
-        .padding(20)
+        .padding(24)
         .background(Color.primary.opacity(0.03))
     }
 
     private var previewCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             if !title.isEmpty {
                 Text(title)
-                    .font(.appBodyBold)
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Color.primary)
                     .lineLimit(3)
             } else {
                 Text("제목 없음")
-                    .font(.appBodyBold)
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.tertiary)
             }
             if !notes.isEmpty {
                 Text(notes)
-                    .font(.appFootnote)
+                    .font(.system(size: 14))
                     .foregroundStyle(.secondary)
-                    .lineLimit(4)
+                    .lineLimit(5)
             }
             if hasDueDate || !assignee.isEmpty {
-                HStack(spacing: 6) {
+                HStack(spacing: 10) {
                     if hasDueDate {
-                        HStack(spacing: 3) {
-                            Image(systemName: "calendar").font(.appCaption)
-                            Text(dueDate.formatted(date: .abbreviated, time: .omitted)).font(.appCaption)
+                        HStack(spacing: 4) {
+                            Image(systemName: "calendar").font(.system(size: 12, weight: .semibold))
+                            Text(dueDate.formatted(date: .abbreviated, time: .omitted)).font(.system(size: 13, weight: .medium))
                         }.foregroundStyle(.orange)
                     }
                     if !assignee.isEmpty {
-                        Text("@\(assignee)").font(.appCaption).foregroundStyle(.secondary)
+                        Text("@\(assignee)").font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
                     }
                 }
                 .padding(.top, 2)
             }
             if !selectedLabels.isEmpty {
-                FlowLayout(spacing: 4) {
+                FlowLayout(spacing: 5) {
                     ForEach(labels.filter { selectedLabels.contains($0.id) }, id: \.id) { label in
                         let color = Color.fromHex(label.colorHex) ?? .accentColor
-                        HStack(spacing: 3) {
-                            Circle().fill(color).frame(width: 5, height: 5)
-                            Text(label.name).font(.appCaption)
+                        HStack(spacing: 4) {
+                            Circle().fill(color).frame(width: 7, height: 7)
+                            Text(label.name).font(.system(size: 12, weight: .medium))
                         }
-                        .padding(.horizontal, 6).padding(.vertical, 1.5)
-                        .background(Capsule().fill(color.opacity(0.18)))
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Capsule().fill(color.opacity(0.20)))
                     }
                 }
                 .padding(.top, 2)
             }
         }
-        .padding(11)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 10)
                 .fill(Color.primary.opacity(0.04))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 6).strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 10).strokeBorder(Color.primary.opacity(0.14), lineWidth: 1)
         )
+        .shadow(color: Color.black.opacity(0.18), radius: 12, y: 6)
     }
 
     @State private var assigneeExpanded: Bool = false
