@@ -16,6 +16,11 @@ struct KanbanSlidePanelView: View {
     /// 컬럼들에 적용.
     @State private var fallbackColumnWidthMirror: Double?
 
+    /// settings.darkMode 미러 — UserDefaults backing 의 @Observable 미추적 우회.
+    @State private var darkModeMirror: Bool?
+
+    private var effectiveDarkMode: Bool { darkModeMirror ?? settings.darkMode }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -65,8 +70,16 @@ struct KanbanSlidePanelView: View {
                 .scaleEffect(s, anchor: .topLeading)
             }
         }
-        .background(.thinMaterial)  // 이중 material(.thin + .ultraThin) 제거 → 렌더링 비용 절감
+        // A(Linear Dark) + D(Compact Dense) 하이브리드. SlidePad 전용 — 메인 윈도우는 미영향.
+        // darkMode 토글로 라이트 모드도 지원.
+        .background(
+            effectiveDarkMode
+                ? Color(red: 0.051, green: 0.055, blue: 0.071) // #0d0e12
+                : Color(red: 0.97, green: 0.97, blue: 0.97)    // #f7f7f7
+        )
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .preferredColorScheme(effectiveDarkMode ? .dark : .light)
+        .environment(\.colorScheme, effectiveDarkMode ? .dark : .light)
     }
 
     /// 0.624 = AppTypography 18pt → 11.2pt 환산. drag 는 NSEvent.localMonitor 가
@@ -78,6 +91,14 @@ struct KanbanSlidePanelView: View {
             BoardPickerView(viewModel: viewModel)
             Spacer()
             columnWidthControl
+            Button {
+                let next = !settings.darkMode
+                settings.darkMode = next
+                darkModeMirror = next
+            } label: {
+                Image(systemName: effectiveDarkMode ? "moon.fill" : "sun.max.fill")
+            }
+            .help(effectiveDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환")
             Button { settings.isPinned.toggle() } label: {
                 Image(systemName: settings.isPinned ? "pin.fill" : "pin")
             }

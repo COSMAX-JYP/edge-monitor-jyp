@@ -52,6 +52,7 @@ final class KanbanSlidePanelSettings {
         static let panelHeight = "slidepanel.height"
         static let panelColumnWidth = "slidepanel.columnWidth"
         static let panelColumnWidths = "slidepanel.columnWidths" // [UUID-string: Double]
+        static let darkMode = "slidepanel.darkMode"
         static let targetDisplay = "slidepanel.targetDisplay"
         static let autoHideOnBlur = "slidepanel.autoHideOnBlur"
         static let autoHideOnEscape = "slidepanel.autoHideOnEscape"
@@ -156,5 +157,11 @@ final class KanbanSlidePanelSettings {
             let clamped = min(Self.maxAnimationDuration, max(Self.minAnimationDuration, newValue))
             defaults.set(clamped, forKey: Keys.slideAnimationDuration)
         }
+    }
+
+    /// SlidePad 패널 다크모드 토글. true(기본) = Linear Dark + Compact Dense 톤, false = 라이트.
+    var darkMode: Bool {
+        get { defaults.object(forKey: Keys.darkMode) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Keys.darkMode) }
     }
 }
